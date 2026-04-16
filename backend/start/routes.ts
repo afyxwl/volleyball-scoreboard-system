@@ -1,21 +1,17 @@
 import router from '@adonisjs/core/services/router'
+const ScreensController = () => import('#controllers/screens_controller')
+const MatchesController = () => import('#controllers/matches_controller')
 
-const ScreenController = () => import('#controllers/screen_controller')
-const MatchController = () => import('#controllers/match_controller')
-
-router.get('/test', async () => {
-  return { status: 'ok' }
+router.get('/', async () => {
+  return { ok: true, message: 'Scoreboard backend is running' }
 })
 
-router.get('/screens', [ScreenController, 'index'])
-router.get('/screens/:id', [ScreenController, 'show'])
-router.get('/screens/:id/current', [ScreenController, 'current'])
+router.get('/screens', [ScreensController, 'index'])
+router.get('/screens/:id/current', [ScreensController, 'current'])
 
-router.get('/matches', [MatchController, 'index'])
-router.get('/matches/:id', [MatchController, 'show'])
-
-router.patch('/matches/:id/score/add/:team', [MatchController, 'addPoint'])
-router.patch('/matches/:id/score/remove/:team', [MatchController, 'removePoint'])
-router.patch('/matches/:id/timeout/:team', [MatchController, 'takeTimeout'])
-router.patch('/matches/:id/period/start', [MatchController, 'startPeriod'])
-router.patch('/matches/:id/period/end', [MatchController, 'endPeriod'])
+router.get('/matches/:id', [MatchesController, 'show'])
+router.patch('/matches/:id/score', [MatchesController, 'updateScore'])
+router.patch('/matches/:id/settings', [MatchesController, 'updateSettings'])
+router.patch('/matches/:id/timeout', [MatchesController, 'timeout'])
+router.post('/matches/:id/start-period', [MatchesController, 'startPeriod'])
+router.post('/matches/:id/end-period', [MatchesController, 'endPeriod'])

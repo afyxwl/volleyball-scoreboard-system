@@ -6,28 +6,9 @@ const dbConfig = defineConfig({
   connection: 'pg',
 
   connections: {
-    sqlite: {
-      client: 'better-sqlite3',
-
-      connection: {
-        filename: app.tmpPath('db.sqlite3'),
-      },
-
-      useNullAsDefault: true,
-
-      migrations: {
-        naturalSort: true,
-        paths: ['database/migrations'],
-      },
-
-      schemaGeneration: {
-        enabled: true,
-        rulesPaths: ['./database/schema_rules.js'],
-      },
-    },
-
     pg: {
       client: 'pg',
+
       connection: {
         host: env.get('DB_HOST'),
         port: Number(env.get('DB_PORT')),
@@ -35,10 +16,12 @@ const dbConfig = defineConfig({
         password: env.get('DB_PASSWORD'),
         database: env.get('DB_DATABASE'),
       },
+
       migrations: {
         naturalSort: true,
         paths: ['database/migrations'],
       },
+
       debug: app.inDev,
     },
   },

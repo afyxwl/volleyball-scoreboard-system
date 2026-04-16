@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import socketService from '#services/ws/socket_service'
 
 type MatchUpdatedPayload = {
@@ -33,7 +32,5 @@ export default class BroadcastService {
       event: 'match:updated',
       payload,
     })
-  }
-}>>>>>>> feature/backend-init
   }
 }

@@ -5,9 +5,7 @@ class SocketService {
   private io: Server | null = null
 
   public boot(httpServer: HttpServer) {
-    if (this.io) {
-      return this.io
-    }
+    if (this.io) return this.io
 
     this.io = new Server(httpServer, {
       cors: {
@@ -21,7 +19,6 @@ class SocketService {
       socket.on('screen:join', (payload: { screenId: number }) => {
         const room = `screen:${payload.screenId}`
         socket.join(room)
-        console.log(`socket ${socket.id} joined ${room}`)
       })
 
       socket.on('disconnect', () => {
@@ -34,17 +31,14 @@ class SocketService {
 
   public getInstance() {
     if (!this.io) {
-      throw new Error('Socket.IO server has not been initialized')
+      throw new Error('Socket.IO not initialized')
     }
-
     return this.io
   }
 
   public emitToScreen(screenId: number, event: string, payload: unknown) {
-    const io = this.getInstance()
-    io.to(`screen:${screenId}`).emit(event, payload)
+    this.getInstance().to(`screen:${screenId}`).emit(event, payload)
   }
 }
 
-const socketService = new SocketService()
-export default socketService
+export default new SocketService()

@@ -6,29 +6,53 @@ import type { ApiDefinition } from './tree.d.ts'
 const placeholder: any = {}
 
 const routes = {
-  'auth.new_account.store': {
-    methods: ["POST"],
-    pattern: '/api/v1/auth/signup',
-    tokens: [{"old":"/api/v1/auth/signup","type":0,"val":"api","end":""},{"old":"/api/v1/auth/signup","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/signup","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/signup","type":0,"val":"signup","end":""}],
-    types: placeholder as Registry['auth.new_account.store']['types'],
-  },
-  'auth.access_token.store': {
-    methods: ["POST"],
-    pattern: '/api/v1/auth/login',
-    tokens: [{"old":"/api/v1/auth/login","type":0,"val":"api","end":""},{"old":"/api/v1/auth/login","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/login","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/login","type":0,"val":"login","end":""}],
-    types: placeholder as Registry['auth.access_token.store']['types'],
-  },
-  'auth.access_token.destroy': {
-    methods: ["POST"],
-    pattern: '/api/v1/auth/logout',
-    tokens: [{"old":"/api/v1/auth/logout","type":0,"val":"api","end":""},{"old":"/api/v1/auth/logout","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/logout","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/logout","type":0,"val":"logout","end":""}],
-    types: placeholder as Registry['auth.access_token.destroy']['types'],
-  },
-  'profile.profile.show': {
+  'screens.index': {
     methods: ["GET","HEAD"],
-    pattern: '/api/v1/account/profile',
-    tokens: [{"old":"/api/v1/account/profile","type":0,"val":"api","end":""},{"old":"/api/v1/account/profile","type":0,"val":"v1","end":""},{"old":"/api/v1/account/profile","type":0,"val":"account","end":""},{"old":"/api/v1/account/profile","type":0,"val":"profile","end":""}],
-    types: placeholder as Registry['profile.profile.show']['types'],
+    pattern: '/screens',
+    tokens: [{"old":"/screens","type":0,"val":"screens","end":""}],
+    types: placeholder as Registry['screens.index']['types'],
+  },
+  'screens.current': {
+    methods: ["GET","HEAD"],
+    pattern: '/screens/:id/current',
+    tokens: [{"old":"/screens/:id/current","type":0,"val":"screens","end":""},{"old":"/screens/:id/current","type":1,"val":"id","end":""},{"old":"/screens/:id/current","type":0,"val":"current","end":""}],
+    types: placeholder as Registry['screens.current']['types'],
+  },
+  'matches.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/matches/:id',
+    tokens: [{"old":"/matches/:id","type":0,"val":"matches","end":""},{"old":"/matches/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['matches.show']['types'],
+  },
+  'matches.update_score': {
+    methods: ["PATCH"],
+    pattern: '/matches/:id/score',
+    tokens: [{"old":"/matches/:id/score","type":0,"val":"matches","end":""},{"old":"/matches/:id/score","type":1,"val":"id","end":""},{"old":"/matches/:id/score","type":0,"val":"score","end":""}],
+    types: placeholder as Registry['matches.update_score']['types'],
+  },
+  'matches.update_settings': {
+    methods: ["PATCH"],
+    pattern: '/matches/:id/settings',
+    tokens: [{"old":"/matches/:id/settings","type":0,"val":"matches","end":""},{"old":"/matches/:id/settings","type":1,"val":"id","end":""},{"old":"/matches/:id/settings","type":0,"val":"settings","end":""}],
+    types: placeholder as Registry['matches.update_settings']['types'],
+  },
+  'matches.timeout': {
+    methods: ["PATCH"],
+    pattern: '/matches/:id/timeout',
+    tokens: [{"old":"/matches/:id/timeout","type":0,"val":"matches","end":""},{"old":"/matches/:id/timeout","type":1,"val":"id","end":""},{"old":"/matches/:id/timeout","type":0,"val":"timeout","end":""}],
+    types: placeholder as Registry['matches.timeout']['types'],
+  },
+  'matches.start_period': {
+    methods: ["POST"],
+    pattern: '/matches/:id/start-period',
+    tokens: [{"old":"/matches/:id/start-period","type":0,"val":"matches","end":""},{"old":"/matches/:id/start-period","type":1,"val":"id","end":""},{"old":"/matches/:id/start-period","type":0,"val":"start-period","end":""}],
+    types: placeholder as Registry['matches.start_period']['types'],
+  },
+  'matches.end_period': {
+    methods: ["POST"],
+    pattern: '/matches/:id/end-period',
+    tokens: [{"old":"/matches/:id/end-period","type":0,"val":"matches","end":""},{"old":"/matches/:id/end-period","type":1,"val":"id","end":""},{"old":"/matches/:id/end-period","type":0,"val":"end-period","end":""}],
+    types: placeholder as Registry['matches.end_period']['types'],
   },
 } as const satisfies Record<string, AdonisEndpoint>
 

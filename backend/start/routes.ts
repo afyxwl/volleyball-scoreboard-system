@@ -1,37 +1,17 @@
-/*
-|--------------------------------------------------------------------------
-| Routes file
-|--------------------------------------------------------------------------
-|
-| The routes file is used for defining the HTTP routes.
-|
-*/
-
-import { middleware } from '#start/kernel'
 import router from '@adonisjs/core/services/router'
-import { controllers } from '#generated/controllers'
+const ScreensController = () => import('#controllers/screens_controller')
+const MatchesController = () => import('#controllers/matches_controller')
 
-router.get('/', () => {
-  return { hello: 'world' }
+router.get('/', async () => {
+  return { ok: true, message: 'Scoreboard backend is running' }
 })
 
-router
-  .group(() => {
-    router
-      .group(() => {
-        router.post('signup', [controllers.NewAccount, 'store'])
-        router.post('login', [controllers.AccessToken, 'store'])
-        router.post('logout', [controllers.AccessToken, 'destroy']).use(middleware.auth())
-      })
-      .prefix('auth')
-      .as('auth')
+router.get('/screens', [ScreensController, 'index'])
+router.get('/screens/:id/current', [ScreensController, 'current'])
 
-    router
-      .group(() => {
-        router.get('/profile', [controllers.Profile, 'show'])
-      })
-      .prefix('account')
-      .as('profile')
-      .use(middleware.auth())
-  })
-  .prefix('/api/v1')
+router.get('/matches/:id', [MatchesController, 'show'])
+router.patch('/matches/:id/score', [MatchesController, 'updateScore'])
+router.patch('/matches/:id/settings', [MatchesController, 'updateSettings'])
+router.patch('/matches/:id/timeout', [MatchesController, 'timeout'])
+router.post('/matches/:id/start-period', [MatchesController, 'startPeriod'])
+router.post('/matches/:id/end-period', [MatchesController, 'endPeriod'])

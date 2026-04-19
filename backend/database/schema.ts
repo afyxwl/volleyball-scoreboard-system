@@ -32,6 +32,73 @@ export class AuthAccessTokenSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class MatchEventSchema extends BaseModel {
+  static $columns = ['createdAt', 'eventType', 'id', 'matchId', 'payloadJson'] as const
+  $columns = MatchEventSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare eventType: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare matchId: number | null
+  @column()
+  declare payloadJson: any | null
+}
+
+export class MatchSchema extends BaseModel {
+  static $columns = ['createdAt', 'currentSet', 'id', 'isActive', 'periodTime', 'score1', 'score2', 'screenId', 'sportType', 'status', 'team1Name', 'team2Name', 'timeouts1', 'timeouts2', 'updatedAt'] as const
+  $columns = MatchSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare currentSet: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isActive: boolean
+  @column()
+  declare periodTime: string | null
+  @column()
+  declare score1: number
+  @column()
+  declare score2: number
+  @column()
+  declare screenId: number | null
+  @column()
+  declare sportType: string
+  @column()
+  declare status: string
+  @column()
+  declare team1Name: string
+  @column()
+  declare team2Name: string
+  @column()
+  declare timeouts1: number
+  @column()
+  declare timeouts2: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class ScreenSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'isActive', 'name', 'slug', 'updatedAt'] as const
+  $columns = ScreenSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isActive: boolean
+  @column()
+  declare name: string
+  @column()
+  declare slug: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class UserSchema extends BaseModel {
   static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'updatedAt'] as const
   $columns = UserSchema.$columns

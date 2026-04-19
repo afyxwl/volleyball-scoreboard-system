@@ -4,21 +4,33 @@ type ParamValue = string | number | bigint | boolean
 
 export type ScannedRoutes = {
   ALL: {
-    'auth.new_account.store': { paramsTuple?: []; params?: {} }
-    'auth.access_token.store': { paramsTuple?: []; params?: {} }
-    'auth.access_token.destroy': { paramsTuple?: []; params?: {} }
-    'profile.profile.show': { paramsTuple?: []; params?: {} }
+    'screens.index': { paramsTuple?: []; params?: {} }
+    'screens.current': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.update_score': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.update_settings': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.timeout': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.start_period': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.end_period': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   GET: {
-    'profile.profile.show': { paramsTuple?: []; params?: {} }
+    'screens.index': { paramsTuple?: []; params?: {} }
+    'screens.current': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   HEAD: {
-    'profile.profile.show': { paramsTuple?: []; params?: {} }
+    'screens.index': { paramsTuple?: []; params?: {} }
+    'screens.current': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+  }
+  PATCH: {
+    'matches.update_score': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.update_settings': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.timeout': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   POST: {
-    'auth.new_account.store': { paramsTuple?: []; params?: {} }
-    'auth.access_token.store': { paramsTuple?: []; params?: {} }
-    'auth.access_token.destroy': { paramsTuple?: []; params?: {} }
+    'matches.start_period': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.end_period': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
 }
 declare module '@adonisjs/core/types/http' {

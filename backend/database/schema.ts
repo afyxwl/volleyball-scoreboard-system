@@ -83,7 +83,7 @@ export class MatchSchema extends BaseModel {
 }
 
 export class ScreenSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'isActive', 'name', 'slug', 'updatedAt'] as const
+  static $columns = ['createdAt', 'id', 'isActive', 'name', 'ownerUserId', 'slug', 'updatedAt'] as const
   $columns = ScreenSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -94,13 +94,15 @@ export class ScreenSchema extends BaseModel {
   @column()
   declare name: string
   @column()
+  declare ownerUserId: number | null
+  @column()
   declare slug: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'updatedAt'] as const
+  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'role', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -112,6 +114,8 @@ export class UserSchema extends BaseModel {
   declare id: number
   @column({ serializeAs: null })
   declare password: string
+  @column()
+  declare role: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

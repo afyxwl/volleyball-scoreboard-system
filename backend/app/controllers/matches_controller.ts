@@ -7,6 +7,11 @@ export default class MatchesController {
     return await matchService.getById(Number(params.id))
   }
 
+  public async getHistory({ params }: HttpContext) {
+    const matchService = new MatchService()
+    return await matchService.getHistory(Number(params.id))
+  }
+
   public async updateScore({ params, request }: HttpContext) {
     const matchService = new MatchService()
 
@@ -47,5 +52,10 @@ export default class MatchesController {
   public async endPeriod({ params }: HttpContext) {
     const matchService = new MatchService()
     return await matchService.endPeriod(Number(params.id))
+  }
+
+  public async resetMatch({ params }: HttpContext) {
+    const matchService = new MatchService()
+    return await matchService.resetMatch(Number(params.id))
   }
 }

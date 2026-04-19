@@ -98,6 +98,35 @@ export default class MatchService {
 
     return payload
   }
+    public async getHistory(matchId: number) {
+    return await MatchEvent.query()
+      .where('match_id', matchId)
+      .orderBy('id', 'asc')
+  }
+    public async resetMatch(matchId: number) {
+    const matchModel = await this.getMatchOrFail(matchId)
+
+    matchModel.status = 'draft'
+    matchModel.currentSet = 1
+    matchModel.team1Name = 'TEAM A'
+    matchModel.team2Name = 'TEAM B'
+    matchModel.score1 = 0
+    matchModel.score2 = 0
+    matchModel.timeouts1 = 0
+    matchModel.timeouts2 = 0
+    matchModel.periodTime = '00:00'
+    matchModel.isActive = true
+
+    await matchModel.save()
+
+    const domainMatch = MatchFactory.fromModel(matchModel)
+    const payload = domainMatch.serializeForScreen()
+
+    await this.logEvent(matchModel.id, 'match_reset', payload)
+    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
+
+    return payload
+  }
 
   public async useTimeout(matchId: number, team: TeamNumber) {
     return await this.takeTimeout(matchId, team)
@@ -125,9 +154,18 @@ export default class MatchService {
     domainMatch.endPeriod()
 
     await this.persist(matchModel, domainMatch)
-    await this.logEvent(matchModel.id, 'match.period_ended', {})
 
     const payload = domainMatch.serializeForScreen()
+
+    await this.logEvent(matchModel.id, 'period_ended', {
+      snapshot: payload,
+      finalScore: {
+        team1: payload.team1.score,
+        team2: payload.team2.score,
+      },
+      currentSet: payload.currentSet,
+    })
+
     await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
 
     return payload
@@ -247,6 +285,8 @@ export default class MatchService {
       matchId,
       eventType,
       payloadJson,
+ 
     })
+
   }
 }

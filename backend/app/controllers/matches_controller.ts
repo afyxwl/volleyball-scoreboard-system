@@ -58,4 +58,26 @@ export default class MatchesController {
     const matchService = new MatchService()
     return await matchService.resetMatch(Number(params.id))
   }
+  public async store({ request, response }: HttpContext) {
+  const matchService = new MatchService()
+
+  const body = request.only([
+    'screenId',
+    'sportType',
+    'team1Name',
+    'team2Name',
+    'currentSet',
+    'periodTime',
+  ]) as {
+    screenId: number
+    sportType?: string
+    team1Name?: string
+    team2Name?: string
+    currentSet?: number
+    periodTime?: string | null
+  }
+
+  const data = await matchService.createMatch(body)
+  return response.created(data)
+}
 }

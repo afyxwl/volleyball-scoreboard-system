@@ -31,10 +31,46 @@ export default class MatchService {
     if (!matchModel) {
       return null
     }
+  
 
     const domainMatch = MatchFactory.fromModel(matchModel)
     return domainMatch.serializeForScreen()
   }
+  public async createMatch(payload: {
+  screenId: number
+  sportType?: string
+  team1Name?: string
+  team2Name?: string
+  currentSet?: number
+  periodTime?: string | null
+}) {
+  await Match.query()
+    .where('screen_id', payload.screenId)
+    .where('is_active', true)
+    .update({ is_active: false })
+
+  const matchModel = await Match.create({
+    screenId: payload.screenId,
+    sportType: payload.sportType ?? 'volleyball',
+    status: 'draft',
+    team1Name: payload.team1Name ?? 'TEAM A',
+    team2Name: payload.team2Name ?? 'TEAM B',
+    score1: 0,
+    score2: 0,
+    currentSet: payload.currentSet ?? 1,
+    timeouts1: 0,
+    timeouts2: 0,
+    periodTime: payload.periodTime ?? '00:00',
+    isActive: true,
+  })
+
+  const payloadForScreen = MatchFactory.fromModel(matchModel).serializeForScreen()
+
+  await this.logEvent(matchModel.id, 'match.created', payloadForScreen)
+  await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payloadForScreen)
+
+  return payloadForScreen
+}
 
   public async getSerializedMatch(matchId: number) {
     const matchModel = await this.getMatchOrFail(matchId)

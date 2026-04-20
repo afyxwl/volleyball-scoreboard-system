@@ -37,7 +37,8 @@ router
     router.get('/screens', [ScreensController, 'index'])
     router.post('/screens', [ScreensController, 'store'])
     router.patch('/screens/:id', [ScreensController, 'update'])
-
+    
+    router.post('/matches', [MatchesController, 'store'])
     router.get('/matches/:id', [MatchesController, 'show'])
     router.get('/matches/:id/history', [MatchesController, 'getHistory'])
 

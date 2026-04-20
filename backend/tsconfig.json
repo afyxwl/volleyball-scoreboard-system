@@ -17,7 +17,8 @@
     "declaration": false,
     "types": ["node"],
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "rewriteRelativeImportExtensions": true
   },
   "include": [
     "**/*.ts"

@@ -23,6 +23,12 @@ export default class MatchesController {
     return await matchService.updateScore(Number(params.id), body.team, body.delta)
   }
 
+  public async updateFouls({ params, request }: HttpContext) {
+   const matchService = new MatchService()
+    const body = request.only(['team', 'delta']) as { team: 1 | 2; delta: number }
+
+    return await matchService.updateFouls(Number(params.id), body.team, body.delta)
+  }
   public async updateSettings({ params, request }: HttpContext) {
     const matchService = new MatchService()
 

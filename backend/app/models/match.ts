@@ -43,6 +43,12 @@ export default class Match extends BaseModel {
 
   @column({ columnName: 'is_active' })
   declare isActive: boolean
+  
+  @column()
+  declare fouls1: number
+
+  @column()
+  declare fouls2: number
 
   @belongsTo(() => Screen)
   declare screen: BelongsTo<typeof Screen>

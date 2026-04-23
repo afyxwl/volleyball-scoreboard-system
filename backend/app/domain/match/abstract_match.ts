@@ -115,17 +115,31 @@ export default abstract class AbstractMatch {
   public abstract removePoint(team: TeamNumber): void
   public abstract takeTimeout(team: TeamNumber): void
 
-  public serializeForScreen() {
-    return {
-      id: this._id,
-      screenId: this._screenId,
-      sportType: this._sportType,
-      status: this._status,
-      currentSet: this._currentSet,
-      isActive: this._isActive,
-      clock: this._clock.toJSON(),
-      team1: this._team1.toJSON(),
-      team2: this._team2.toJSON(),
-    }
+serializeForScreen() {
+  return {
+    id: this.id,
+    screenId: this.screenId,
+    sportType: this.sportType,
+    status: this.status,
+    currentSet: this.currentSet,
+    isActive: this.isActive,
+    clock: {
+      time: this.clock.time,
+      isRunning: this.clock.isRunning,
+    },
+    team1: {
+      name: this.team1.name,
+      score: this.team1.score,
+      fouls: this.team1.fouls,
+      timeoutsUsed: this.team1.timeoutsUsed,
+    },
+    team2: {
+      name: this.team2.name,
+      score: this.team2.score,
+      fouls: this.team2.fouls,
+      timeoutsUsed: this.team2.timeoutsUsed,
+    },
+  }
+
   }
 }

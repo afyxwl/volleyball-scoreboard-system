@@ -45,6 +45,8 @@ router
     router.patch('/matches/:id/score', [MatchesController, 'updateScore'])
     router.patch('/matches/:id/settings', [MatchesController, 'updateSettings'])
     router.patch('/matches/:id/timeout', [MatchesController, 'timeout'])
+    router.patch('/matches/:id/fouls', [MatchesController, 'updateFouls'])
+
 
     router.post('/matches/:id/start-period', [MatchesController, 'startPeriod'])
     router.post('/matches/:id/end-period', [MatchesController, 'endPeriod'])

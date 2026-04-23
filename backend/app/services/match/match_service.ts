@@ -57,6 +57,8 @@ export default class MatchService {
     team2Name: payload.team2Name ?? 'TEAM B',
     score1: 0,
     score2: 0,
+    fouls1: 0,
+    fouls2: 0,
     currentSet: payload.currentSet ?? 1,
     timeouts1: 0,
     timeouts2: 0,
@@ -118,6 +120,32 @@ export default class MatchService {
     }
 
     return await this.getById(matchId)
+  }
+  
+  public async updateFouls(matchId: number, team: TeamNumber, delta: number) {
+    const matchModel = await this.getMatchOrFail(matchId)
+
+    if (team === 1) {
+     matchModel.fouls1 = Math.max(0, (matchModel.fouls1 ?? 0) + delta)
+    } else {
+      matchModel.fouls2 = Math.max(0, (matchModel.fouls2 ?? 0) + delta)
+    }
+
+    await matchModel.save()
+
+    const domainMatch = MatchFactory.fromModel(matchModel)
+    const payload = domainMatch.serializeForScreen()
+
+    await this.logEvent(matchModel.id, 'match.fouls_updated', {
+      team,
+      delta,
+     fouls1: matchModel.fouls1,
+      fouls2: matchModel.fouls2,
+    })
+
+    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
+
+    return payload
   }
 
   public async takeTimeout(matchId: number, team: TeamNumber) {
@@ -303,6 +331,9 @@ export default class MatchService {
 
     matchModel.score1 = serialized.team1.score
     matchModel.score2 = serialized.team2.score
+
+    matchModel.fouls1 = serialized.team1.fouls ?? matchModel.fouls1 ?? 0
+    matchModel.fouls2 = serialized.team2.fouls ?? matchModel.fouls2 ?? 0
 
     matchModel.timeouts1 = serialized.team1.timeoutsUsed
     matchModel.timeouts2 = serialized.team2.timeoutsUsed

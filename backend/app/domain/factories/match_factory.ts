@@ -6,8 +6,20 @@ import Match from '#models/match'
 
 export default class MatchFactory {
   public static fromModel(match: Match): AbstractMatch {
-    const team1 = new TeamState(match.team1Name, match.score1, match.timeouts1)
-    const team2 = new TeamState(match.team2Name, match.score2, match.timeouts2)
+    const team1 = new TeamState(
+      match.team1Name,
+      match.score1,
+      match.timeouts1,
+      match.fouls1 ?? 0
+    )
+
+    const team2 = new TeamState(
+      match.team2Name,
+      match.score2,
+      match.timeouts2,
+      match.fouls2 ?? 0
+    )
+
     const clock = new ClockState(match.periodTime, match.status === 'live')
 
     switch (match.sportType) {

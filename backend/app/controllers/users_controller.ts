@@ -14,31 +14,37 @@ export default class UsersController {
     )
   }
 
-  public async store({ request, response }: HttpContext) {
-    const payload = request.only(['fullName', 'email', 'password', 'role']) as {
-      fullName?: string | null
-      email: string
-      password: string
-      role?: 'admin' | 'operator'
-    }
+public async store({ request, response }: HttpContext) {
+  const payload = request.only(['fullName', 'email', 'password', 'role']) as {
+    fullName?: string | null
+    email?: string
+    password?: string
+    role?: 'admin' | 'operator'
+  }
 
-    const existing = await User.findBy('email', payload.email)
-    if (existing) {
-      return response.conflict({ message: 'User with this email already exists' })
-    }
-
-    const user = await User.create({
-      fullName: payload.fullName ?? null,
-      email: payload.email,
-      password: payload.password,
-      role: payload.role ?? 'operator',
-    })
-
-    return response.created({
-      id: user.id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
+  if (!payload.email || !payload.password) {
+    return response.badRequest({
+      message: 'email and password are required',
     })
   }
+
+  const existing = await User.findBy('email', payload.email)
+  if (existing) {
+    return response.conflict({ message: 'User with this email already exists' })
+  }
+
+  const user = await User.create({
+    fullName: payload.fullName ?? null,
+    email: payload.email,
+    password: payload.password,
+    role: payload.role ?? 'operator',
+  })
+
+  return response.created({
+    id: user.id,
+    fullName: user.fullName,
+    email: user.email,
+    role: user.role,
+  })
+}
 }

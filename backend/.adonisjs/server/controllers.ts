@@ -11,4 +11,5 @@ export const controllers = {
   Profile: () => import('#controllers/profile_controller'),
   Screen: () => import('#controllers/screen_controller'),
   Screens: () => import('#controllers/screens_controller'),
+  Users: () => import('#controllers/users_controller'),
 }

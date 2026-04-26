@@ -39,7 +39,7 @@ router
     router.patch('/screens/:id', [ScreensController, 'update'])
     router.get('/screens/:id/matches/history', [MatchesController, 'screenHistory'])
     
-    router.post('/matches', [MatchesController, 'store'])
+    router.post('/matches', [MatchesControllіer, 'store'])
     router.get('/matches/:id', [MatchesController, 'show'])
     router.get('/matches/:id/history', [MatchesController, 'getHistory'])
 
@@ -54,5 +54,6 @@ router
     router.post('/matches/:id/end-period', [MatchesController, 'endPeriod'])
     router.post('/matches/:id/pause-period', [MatchesController, 'pausePeriod'])
     router.post('/matches/:id/reset', [MatchesController, 'resetMatch'])
+
   })
   .use(middleware.auth())

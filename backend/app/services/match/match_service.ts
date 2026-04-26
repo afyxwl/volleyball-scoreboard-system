@@ -110,20 +110,41 @@ export default class MatchService {
     return payload
   }
 
-  public async updateScore(matchId: number, team: TeamNumber, delta: number) {
-    if (delta > 0) {
-      return await this.addPoint(matchId, team)
-    }
-
-    if (delta < 0) {
-      return await this.removePoint(matchId, team)
-    }
-
-    return await this.getById(matchId)
-  }
-  
-public async updateFouls(matchId: number, team: TeamNumber, delta: number) {
+public async updateScore(matchId: number, team: TeamNumber, delta: number, periodTime?: string) {
   const matchModel = await this.getMatchOrFail(matchId)
+
+  if (periodTime) {
+    matchModel.periodTime = periodTime
+  }
+
+  if (team === 1) {
+    matchModel.score1 = Math.max(0, matchModel.score1 + delta)
+  } else {
+    matchModel.score2 = Math.max(0, matchModel.score2 + delta)
+  }
+
+  await matchModel.save()
+
+  const domainMatch = MatchFactory.fromModel(matchModel)
+  const payload = domainMatch.serializeForScreen()
+
+  await this.logEvent(matchModel.id, 'match.score_updated', {
+    team,
+    delta,
+    periodTime: matchModel.periodTime,
+  })
+
+  await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
+
+  return payload
+}
+  
+public async updateFouls(matchId: number, team: TeamNumber, delta: number, periodTime?: string) {
+  const matchModel = await this.getMatchOrFail(matchId)
+
+  if (periodTime) {
+    matchModel.periodTime = periodTime
+  }
 
   if (team === 1) {
     matchModel.fouls1 = Math.max(0, (matchModel.fouls1 ?? 0) + delta)
@@ -139,13 +160,13 @@ public async updateFouls(matchId: number, team: TeamNumber, delta: number) {
   await this.logEvent(matchModel.id, 'match.fouls_updated', {
     team,
     delta,
-    fouls1: matchModel.fouls1,
-    fouls2: matchModel.fouls2,
+    periodTime: matchModel.periodTime,
   })
 
   await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
 
   return payload
+}turn payload
 }
 
   public async takeTimeout(matchId: number, team: TeamNumber) {
@@ -192,17 +213,17 @@ public async updateFouls(matchId: number, team: TeamNumber, delta: number) {
     return payload
   }
 
-  public async useTimeout(matchId: number, team: TeamNumber) {
-    return await this.takeTimeout(matchId, team)
-  }
-
-  public async startPeriod(matchId: number) {
+public async useTimeout(matchId: number, team: TeamNumber, periodTime?: string) {
   const matchModel = await this.getMatchOrFail(matchId)
 
-  matchModel.status = 'live'
+  if (periodTime) {
+    matchModel.periodTime = periodTime
+  }
 
-  if (!matchModel.periodTime) {
-    matchModel.periodTime = '00:00'
+  if (team === 1) {
+    matchModel.timeouts1 += 1
+  } else {
+    matchModel.timeouts2 += 1
   }
 
   await matchModel.save()
@@ -210,7 +231,8 @@ public async updateFouls(matchId: number, team: TeamNumber, delta: number) {
   const domainMatch = MatchFactory.fromModel(matchModel)
   const payload = domainMatch.serializeForScreen()
 
-  await this.logEvent(matchModel.id, 'match.period_started', {
+  await this.logEvent(matchModel.id, 'match.timeout_taken', {
+    team,
     periodTime: matchModel.periodTime,
   })
 

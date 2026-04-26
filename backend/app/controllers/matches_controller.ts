@@ -12,23 +12,39 @@ export default class MatchesController {
     return await matchService.getHistory(Number(params.id))
   }
 
-  public async updateScore({ params, request }: HttpContext) {
-    const matchService = new MatchService()
+public async updateScore({ params, request }: HttpContext) {
+  const matchService = new MatchService()
 
-    const body = request.only(['team', 'delta']) as {
-      team: 1 | 2
-      delta: number
-    }
-
-    return await matchService.updateScore(Number(params.id), body.team, body.delta)
+  const body = request.only(['team', 'delta', 'periodTime']) as {
+    team: 1 | 2
+    delta: number
+    periodTime?: string
   }
 
-  public async updateFouls({ params, request }: HttpContext) {
-   const matchService = new MatchService()
-    const body = request.only(['team', 'delta']) as { team: 1 | 2; delta: number }
+  return await matchService.updateScore(
+    Number(params.id),
+    body.team,
+    body.delta,
+    body.periodTime
+  )
+}
 
-    return await matchService.updateFouls(Number(params.id), body.team, body.delta)
+public async updateFouls({ params, request }: HttpContext) {
+  const matchService = new MatchService()
+
+  const body = request.only(['team', 'delta', 'periodTime']) as {
+    team: 1 | 2
+    delta: number
+    periodTime?: string
   }
+
+  return await matchService.updateFouls(
+    Number(params.id),
+    body.team,
+    body.delta,
+    body.periodTime
+  )
+}
   public async pausePeriod({ params, request }: HttpContext) {
   const matchService = new MatchService()
   const body = request.only(['periodTime']) as { periodTime?: string }
@@ -49,12 +65,20 @@ export default class MatchesController {
     return await matchService.updateSettings(Number(params.id), body)
   }
 
-  public async timeout({ params, request }: HttpContext) {
-    const matchService = new MatchService()
-    const body = request.only(['team']) as { team: 1 | 2 }
+ public async timeout({ params, request }: HttpContext) {
+  const matchService = new MatchService()
 
-    return await matchService.useTimeout(Number(params.id), body.team)
+  const body = request.only(['team', 'periodTime']) as {
+    team: 1 | 2
+    periodTime?: string
   }
+
+  return await matchService.useTimeout(
+    Number(params.id),
+    body.team,
+    body.periodTime
+  )
+}
 
   public async startPeriod({ params }: HttpContext) {
     const matchService = new MatchService()

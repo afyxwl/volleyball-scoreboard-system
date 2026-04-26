@@ -61,7 +61,14 @@ export default class MatchesController {
     return await matchService.startPeriod(Number(params.id))
   }
 
- public async endPeriod({ params, request }: HttpContext) {
+public async pausePeriod({ params, request }: HttpContext) {
+  const matchService = new MatchService()
+  const body = request.only(['periodTime']) as { periodTime?: string }
+
+  return await matchService.pausePeriod(Number(params.id), body.periodTime)
+}
+
+public async endPeriod({ params, request }: HttpContext) {
   const matchService = new MatchService()
   const body = request.only(['periodTime', 'comment']) as {
     periodTime?: string
@@ -69,6 +76,10 @@ export default class MatchesController {
   }
 
   return await matchService.endPeriod(Number(params.id), body.periodTime, body.comment)
+}
+public async screenHistory({ params }: HttpContext) {
+  const matchService = new MatchService()
+  return await matchService.getScreenHistory(Number(params.id))
 }
 
   public async resetMatch({ params }: HttpContext) {

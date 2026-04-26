@@ -148,28 +148,6 @@ public async updateFouls(matchId: number, team: TeamNumber, delta: number) {
   return payload
 }
 
-public async pausePeriod(matchId: number, periodTime?: string) {
-  const matchModel = await this.getMatchOrFail(matchId)
-
-  matchModel.status = 'paused'
-
-  if (periodTime) {
-    matchModel.periodTime = periodTime
-  }
-
-  await matchModel.save()
-
-  const domainMatch = MatchFactory.fromModel(matchModel)
-  const payload = domainMatch.serializeForScreen()
-
-  await this.logEvent(matchModel.id, 'match.period_paused', {
-    periodTime: matchModel.periodTime,
-  })
-
-  await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
-
-  return payload
-}
   public async takeTimeout(matchId: number, team: TeamNumber) {
     const matchModel = await this.getMatchOrFail(matchId)
     const domainMatch = MatchFactory.fromModel(matchModel)
@@ -233,6 +211,29 @@ public async pausePeriod(matchId: number, periodTime?: string) {
   const payload = domainMatch.serializeForScreen()
 
   await this.logEvent(matchModel.id, 'match.period_started', {
+    periodTime: matchModel.periodTime,
+  })
+
+  await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
+
+  return payload
+}
+
+public async pausePeriod(matchId: number, periodTime?: string) {
+  const matchModel = await this.getMatchOrFail(matchId)
+
+  matchModel.status = 'paused'
+
+  if (periodTime) {
+    matchModel.periodTime = periodTime
+  }
+
+  await matchModel.save()
+
+  const domainMatch = MatchFactory.fromModel(matchModel)
+  const payload = domainMatch.serializeForScreen()
+
+  await this.logEvent(matchModel.id, 'match.period_paused', {
     periodTime: matchModel.periodTime,
   })
 
@@ -313,6 +314,30 @@ public async endPeriod(matchId: number, periodTime?: string, comment?: string) {
     return payload
   }
 
+  public async getScreenHistory(screenId: number) {
+  const matches = await Match.query()
+    .where('screenId', screenId)
+    .where('status', 'finished')
+    .orderBy('updatedAt', 'desc')
+
+  return matches.map((match) => ({
+    id: match.id,
+    screenId: match.screenId,
+    team1Name: match.team1Name,
+    team2Name: match.team2Name,
+    score1: match.score1,
+    score2: match.score2,
+    fouls1: match.fouls1,
+    fouls2: match.fouls2,
+    timeouts1: match.timeouts1,
+    timeouts2: match.timeouts2,
+    currentSet: match.currentSet,
+    periodTime: match.periodTime,
+    status: match.status,
+    finishedAt: match.updatedAt,
+  }))
+}
+
   public async updateSettings(
     matchId: number,
     payload: {
@@ -341,9 +366,9 @@ public async endPeriod(matchId: number, periodTime?: string, comment?: string) {
       current = await this.startPeriod(matchId)
     }
 
-  if (payload.status === 'paused') {
-  current = await this.pausePeriod(matchId)
-}
+    if (payload.status) {
+      matchModel.status = payload.status
+    }
     if (payload.currentSet !== undefined) {
       const matchModel = await this.getMatchOrFail(matchId)
       matchModel.currentSet = payload.currentSet

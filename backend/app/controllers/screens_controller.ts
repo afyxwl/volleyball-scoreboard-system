@@ -59,7 +59,15 @@ export default class ScreensController {
     await screen.save()
     return response.ok(screen)
   }
+  public async assignUser({ params, request }: HttpContext) {
+    const screen = await Screen.findOrFail(params.id)
+    const { userId } = request.body()
 
+    screen.userId = userId
+    await screen.save()
+
+    return screen
+  }
   public async current({ params, response }: HttpContext) {
     const matchService = new MatchService()
     const data = await matchService.getCurrentByScreenId(Number(params.id))

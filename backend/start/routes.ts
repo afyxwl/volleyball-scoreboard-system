@@ -13,6 +13,11 @@ router.get('/', async () => {
   return { ok: true, message: 'Scoreboard backend is running' }
 })
 
+router.group(() => {
+  router.delete('/users/:id', [UsersController, 'destroy'])
+  router.delete('/screens/:id', [ScreensController, 'destroy'])
+  router.patch('/screens/:id/assign', [ScreensController, 'assignUser'])
+}).use(middleware.superAdmin())
 /**
  * Auth
  */
@@ -37,6 +42,7 @@ router
     router.get('/screens/:id/matches/history', [MatchesController, 'screenHistory'])
     
     router.post('/matches', [MatchesController, 'store'])
+    router.get('/matches/history', [MatchesController, 'history'])
     router.get('/matches/:id', [MatchesController, 'show'])
     router.get('/matches/:id/history', [MatchesController, 'getHistory'])
 

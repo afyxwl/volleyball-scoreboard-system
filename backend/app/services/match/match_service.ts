@@ -94,6 +94,28 @@ export default class MatchService {
 
     return payload
   }
+  public async getFinishedMatchesHistory() {
+  const matches = await Match.query()
+    .where('status', 'finished')
+    .orderBy('updated_at', 'desc')
+
+  return matches.map((match) => ({
+    id: match.id,
+    screenId: match.screenId,
+    team1Name: match.team1Name,
+    team2Name: match.team2Name,
+    score1: match.score1,
+    score2: match.score2,
+    fouls1: match.fouls1,
+    fouls2: match.fouls2,
+    timeouts1: match.timeouts1,
+    timeouts2: match.timeouts2,
+    currentSet: match.currentSet,
+    periodTime: match.periodTime,
+    status: match.status,
+    finishedAt: match.updatedAt,
+  }))
+}
 
   public async removePoint(matchId: number, team: TeamNumber) {
     const matchModel = await this.getMatchOrFail(matchId)

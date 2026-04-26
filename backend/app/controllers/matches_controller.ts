@@ -29,6 +29,11 @@ public async updateScore({ params, request }: HttpContext) {
   )
 }
 
+public async history() {
+  const matchService = new MatchService()
+  return await matchService.getFinishedMatchesHistory()
+}
+
 public async updateFouls({ params, request }: HttpContext) {
   const matchService = new MatchService()
 

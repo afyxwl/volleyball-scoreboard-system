@@ -13,11 +13,12 @@ router.get('/', async () => {
   return { ok: true, message: 'Scoreboard backend is running' }
 })
 
-router.group(() => {
+/*router.group(() => {
   router.delete('/users/:id', [UsersController, 'destroy'])
   router.delete('/screens/:id', [ScreensController, 'destroy'])
   router.patch('/screens/:id/assign', [ScreensController, 'assignUser'])
 }).use(middleware.superAdmin())
+*/
 /**
  * Auth
  */

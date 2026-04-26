@@ -13,8 +13,10 @@ export default class User extends compose(UserSchema, withAuthFinder(hash)) {
 
   @column()
   declare role: 'admin' | 'operator'
-  @column()
-  declare role: 'admin' | 'super_admin'
+ /*
+ @column()
+  declare role: "admin" | "superadmin"
+ */
 
   @hasMany(() => Screen, {
     foreignKey: 'ownerUserId',

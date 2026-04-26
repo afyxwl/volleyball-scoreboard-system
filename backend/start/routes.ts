@@ -48,7 +48,6 @@ router
     router.post('/matches/:id/pause-period', [MatchesController, 'pausePeriod'])
     router.post('/matches/:id/start-period', [MatchesController, 'startPeriod'])
     router.post('/matches/:id/end-period', [MatchesController, 'endPeriod'])
-    router.post('/matches/:id/pause-period', [MatchesController, 'pausePeriod'])
     router.post('/matches/:id/reset', [MatchesController, 'resetMatch'])
 
   })

@@ -61,10 +61,15 @@ export default class MatchesController {
     return await matchService.startPeriod(Number(params.id))
   }
 
-  public async endPeriod({ params }: HttpContext) {
-    const matchService = new MatchService()
-    return await matchService.endPeriod(Number(params.id))
+ public async endPeriod({ params, request }: HttpContext) {
+  const matchService = new MatchService()
+  const body = request.only(['periodTime', 'comment']) as {
+    periodTime?: string
+    comment?: string
   }
+
+  return await matchService.endPeriod(Number(params.id), body.periodTime, body.comment)
+}
 
   public async resetMatch({ params }: HttpContext) {
     const matchService = new MatchService()

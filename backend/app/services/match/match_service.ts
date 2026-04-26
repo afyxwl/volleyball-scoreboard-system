@@ -170,7 +170,6 @@ public async pausePeriod(matchId: number, periodTime?: string) {
 
   return payload
 }
-
   public async takeTimeout(matchId: number, team: TeamNumber) {
     const matchModel = await this.getMatchOrFail(matchId)
     const domainMatch = MatchFactory.fromModel(matchModel)
@@ -242,11 +241,15 @@ public async pausePeriod(matchId: number, periodTime?: string) {
   return payload
 }
 
-public async endPeriod(matchId: number) {
+public async endPeriod(matchId: number, periodTime?: string, comment?: string) {
   const matchModel = await this.getMatchOrFail(matchId)
 
   matchModel.status = 'finished'
   matchModel.isActive = true
+
+  if (periodTime) {
+    matchModel.periodTime = periodTime
+  }
 
   await matchModel.save()
 
@@ -254,12 +257,21 @@ public async endPeriod(matchId: number) {
   const payload = domainMatch.serializeForScreen()
 
   await this.logEvent(matchModel.id, 'match.period_finished', {
+    comment: comment ?? null,
+    periodTime: matchModel.periodTime,
+    currentSet: matchModel.currentSet,
     finalScore: {
       team1: matchModel.score1,
       team2: matchModel.score2,
     },
-    currentSet: matchModel.currentSet,
-    periodTime: matchModel.periodTime,
+    fouls: {
+      team1: matchModel.fouls1,
+      team2: matchModel.fouls2,
+    },
+    timeouts: {
+      team1: matchModel.timeouts1,
+      team2: matchModel.timeouts2,
+    },
   })
 
   await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)

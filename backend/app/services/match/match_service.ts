@@ -148,16 +148,24 @@ public async updateFouls(matchId: number, team: TeamNumber, delta: number) {
   return payload
 }
 
-public async pausePeriod(matchId: number) {
+public async pausePeriod(matchId: number, periodTime?: string) {
   const matchModel = await this.getMatchOrFail(matchId)
 
   matchModel.status = 'paused'
+
+  if (periodTime) {
+    matchModel.periodTime = periodTime
+  }
+
   await matchModel.save()
 
   const domainMatch = MatchFactory.fromModel(matchModel)
   const payload = domainMatch.serializeForScreen()
 
-  await this.logEvent(matchModel.id, 'match.period_paused', {})
+  await this.logEvent(matchModel.id, 'match.period_paused', {
+    periodTime: matchModel.periodTime,
+  })
+
   await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
 
   return payload
@@ -212,43 +220,52 @@ public async pausePeriod(matchId: number) {
   }
 
   public async startPeriod(matchId: number) {
-    const matchModel = await this.getMatchOrFail(matchId)
-    const domainMatch = MatchFactory.fromModel(matchModel)
+  const matchModel = await this.getMatchOrFail(matchId)
 
-    domainMatch.startPeriod()
+  matchModel.status = 'live'
 
-    await this.persist(matchModel, domainMatch)
-    await this.logEvent(matchModel.id, 'match.period_started', {})
-
-    const payload = domainMatch.serializeForScreen()
-    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
-
-    return payload
+  if (!matchModel.periodTime) {
+    matchModel.periodTime = '00:00'
   }
 
-  public async endPeriod(matchId: number) {
-    const matchModel = await this.getMatchOrFail(matchId)
-    const domainMatch = MatchFactory.fromModel(matchModel)
+  await matchModel.save()
 
-    domainMatch.endPeriod()
+  const domainMatch = MatchFactory.fromModel(matchModel)
+  const payload = domainMatch.serializeForScreen()
 
-    await this.persist(matchModel, domainMatch)
+  await this.logEvent(matchModel.id, 'match.period_started', {
+    periodTime: matchModel.periodTime,
+  })
 
-    const payload = domainMatch.serializeForScreen()
+  await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
 
-    await this.logEvent(matchModel.id, 'period_ended', {
-      snapshot: payload,
-      finalScore: {
-        team1: payload.team1.score,
-        team2: payload.team2.score,
-      },
-      currentSet: payload.currentSet,
-    })
+  return payload
+}
 
-    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
+public async endPeriod(matchId: number) {
+  const matchModel = await this.getMatchOrFail(matchId)
 
-    return payload
-  }
+  matchModel.status = 'finished'
+  matchModel.isActive = true
+
+  await matchModel.save()
+
+  const domainMatch = MatchFactory.fromModel(matchModel)
+  const payload = domainMatch.serializeForScreen()
+
+  await this.logEvent(matchModel.id, 'match.period_finished', {
+    finalScore: {
+      team1: matchModel.score1,
+      team2: matchModel.score2,
+    },
+    currentSet: matchModel.currentSet,
+    periodTime: matchModel.periodTime,
+  })
+
+  await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
+
+  return payload
+}
 
   public async renameTeams(matchId: number, team1Name: string, team2Name: string) {
     const matchModel = await this.getMatchOrFail(matchId)

@@ -29,9 +29,11 @@ export default class MatchesController {
 
     return await matchService.updateFouls(Number(params.id), body.team, body.delta)
   }
-  public async pausePeriod({ params }: HttpContext) {
+  public async pausePeriod({ params, request }: HttpContext) {
   const matchService = new MatchService()
-  return await matchService.pausePeriod(Number(params.id))
+  const body = request.only(['periodTime']) as { periodTime?: string }
+
+  return await matchService.pausePeriod(Number(params.id), body.periodTime)
 }
   public async updateSettings({ params, request }: HttpContext) {
     const matchService = new MatchService()

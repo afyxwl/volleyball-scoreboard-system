@@ -122,31 +122,46 @@ export default class MatchService {
     return await this.getById(matchId)
   }
   
-  public async updateFouls(matchId: number, team: TeamNumber, delta: number) {
-    const matchModel = await this.getMatchOrFail(matchId)
+public async updateFouls(matchId: number, team: TeamNumber, delta: number) {
+  const matchModel = await this.getMatchOrFail(matchId)
 
-    if (team === 1) {
-     matchModel.fouls1 = Math.max(0, (matchModel.fouls1 ?? 0) + delta)
-    } else {
-      matchModel.fouls2 = Math.max(0, (matchModel.fouls2 ?? 0) + delta)
-    }
-
-    await matchModel.save()
-
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    const payload = domainMatch.serializeForScreen()
-
-    await this.logEvent(matchModel.id, 'match.fouls_updated', {
-      team,
-      delta,
-     fouls1: matchModel.fouls1,
-      fouls2: matchModel.fouls2,
-    })
-
-    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
-
-    return payload
+  if (team === 1) {
+    matchModel.fouls1 = Math.max(0, (matchModel.fouls1 ?? 0) + delta)
+  } else {
+    matchModel.fouls2 = Math.max(0, (matchModel.fouls2 ?? 0) + delta)
   }
+
+  await matchModel.save()
+
+  const domainMatch = MatchFactory.fromModel(matchModel)
+  const payload = domainMatch.serializeForScreen()
+
+  await this.logEvent(matchModel.id, 'match.fouls_updated', {
+    team,
+    delta,
+    fouls1: matchModel.fouls1,
+    fouls2: matchModel.fouls2,
+  })
+
+  await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
+
+  return payload
+}
+
+public async pausePeriod(matchId: number) {
+  const matchModel = await this.getMatchOrFail(matchId)
+
+  matchModel.status = 'paused'
+  await matchModel.save()
+
+  const domainMatch = MatchFactory.fromModel(matchModel)
+  const payload = domainMatch.serializeForScreen()
+
+  await this.logEvent(matchModel.id, 'match.period_paused', {})
+  await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
+
+  return payload
+}
 
   public async takeTimeout(matchId: number, team: TeamNumber) {
     const matchModel = await this.getMatchOrFail(matchId)
@@ -297,10 +312,9 @@ export default class MatchService {
       current = await this.startPeriod(matchId)
     }
 
-    if (payload.status === 'paused') {
-      current = await this.endPeriod(matchId)
-    }
-
+  if (payload.status === 'paused') {
+  current = await this.pausePeriod(matchId)
+}
     if (payload.currentSet !== undefined) {
       const matchModel = await this.getMatchOrFail(matchId)
       matchModel.currentSet = payload.currentSet

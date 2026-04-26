@@ -45,7 +45,7 @@ public async updateFouls({ params, request }: HttpContext) {
     body.periodTime
   )
 }
-  public async pausePeriod({ params, request }: HttpContext) {
+public async pausePeriod({ params, request }: HttpContext) {
   const matchService = new MatchService()
   const body = request.only(['periodTime']) as { periodTime?: string }
 
@@ -84,13 +84,6 @@ public async updateFouls({ params, request }: HttpContext) {
     const matchService = new MatchService()
     return await matchService.startPeriod(Number(params.id))
   }
-
-public async pausePeriod({ params, request }: HttpContext) {
-  const matchService = new MatchService()
-  const body = request.only(['periodTime']) as { periodTime?: string }
-
-  return await matchService.pausePeriod(Number(params.id), body.periodTime)
-}
 
 public async endPeriod({ params, request }: HttpContext) {
   const matchService = new MatchService()

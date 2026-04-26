@@ -166,7 +166,6 @@ public async updateFouls(matchId: number, team: TeamNumber, delta: number, perio
   await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
 
   return payload
-}turn payload
 }
 
   public async takeTimeout(matchId: number, team: TeamNumber) {
@@ -233,6 +232,28 @@ public async useTimeout(matchId: number, team: TeamNumber, periodTime?: string) 
 
   await this.logEvent(matchModel.id, 'match.timeout_taken', {
     team,
+    periodTime: matchModel.periodTime,
+  })
+
+  await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
+
+  return payload
+}
+public async startPeriod(matchId: number) {
+  const matchModel = await this.getMatchOrFail(matchId)
+
+  matchModel.status = 'live'
+
+  if (!matchModel.periodTime) {
+    matchModel.periodTime = '00:00'
+  }
+
+  await matchModel.save()
+
+  const domainMatch = MatchFactory.fromModel(matchModel)
+  const payload = domainMatch.serializeForScreen()
+
+  await this.logEvent(matchModel.id, 'match.period_started', {
     periodTime: matchModel.periodTime,
   })
 
@@ -389,7 +410,9 @@ public async endPeriod(matchId: number, periodTime?: string, comment?: string) {
     }
 
     if (payload.status) {
-      matchModel.status = payload.status
+    const matchModel = await this.getMatchOrFail(matchId)
+    matchModel.status = payload.status
+    await matchModel.save()
     }
     if (payload.currentSet !== undefined) {
       const matchModel = await this.getMatchOrFail(matchId)

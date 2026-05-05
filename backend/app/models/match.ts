@@ -4,6 +4,11 @@ import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Screen from '#models/screen'
 import MatchEvent from '#models/match_event'
 
+export type SetScoresJson = {
+  team1: number[]
+  team2: number[]
+}
+
 export default class Match extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
@@ -49,6 +54,26 @@ export default class Match extends BaseModel {
 
   @column()
   declare fouls2: number
+  @column({ columnName: 'team1_color' })
+  declare team1Color: string
+
+  @column({ columnName: 'team2_color' })
+  declare team2Color: string
+
+  @column({ columnName: 'font_family' })
+  declare fontFamily: string
+
+  @column({ columnName: 'board_style' })
+  declare boardStyle: string
+
+  @column({ columnName: 'set_scores_json' })
+  declare setScoresJson: SetScoresJson | string | null
+
+  @column({ columnName: 'shot_clock_seconds' })
+  declare shotClockSeconds: number
+
+  @column({ columnName: 'shot_clock_running' })
+  declare shotClockRunning: boolean
 
   @belongsTo(() => Screen)
   declare screen: BelongsTo<typeof Screen>

@@ -48,12 +48,16 @@ export class MatchEventSchema extends BaseModel {
 }
 
 export class MatchSchema extends BaseModel {
-  static $columns = ['createdAt', 'currentSet', 'fouls1', 'fouls2', 'id', 'isActive', 'periodTime', 'score1', 'score2', 'screenId', 'sportType', 'status', 'team1Name', 'team2Name', 'timeouts1', 'timeouts2', 'updatedAt'] as const
+  static $columns = ['boardStyle', 'createdAt', 'currentSet', 'fontFamily', 'fouls1', 'fouls2', 'fouls1', 'fouls2', 'id', 'isActive', 'periodTime', 'score1', 'score2', 'screenId', 'setScoresJson', 'shotClockRunning', 'shotClockSeconds', 'sportType', 'status', 'team1Color', 'team1Name', 'team2Color', 'team2Name', 'timeouts1', 'timeouts2', 'updatedAt'] as const
   $columns = MatchSchema.$columns
+  @column()
+  declare boardStyle: string
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column()
   declare currentSet: number
+  @column()
+  declare fontFamily: string
   @column()
   declare fouls1: number
   @column()
@@ -71,11 +75,21 @@ export class MatchSchema extends BaseModel {
   @column()
   declare screenId: number | null
   @column()
+  declare setScoresJson: any | null
+  @column()
+  declare shotClockRunning: boolean
+  @column()
+  declare shotClockSeconds: number
+  @column()
   declare sportType: string
   @column()
   declare status: string
   @column()
+  declare team1Color: string
+  @column()
   declare team1Name: string
+  @column()
+  declare team2Color: string
   @column()
   declare team2Name: string
   @column()

@@ -60,12 +60,20 @@ public async pausePeriod({ params, request }: HttpContext) {
     const matchService = new MatchService()
 
     const body = request.only([
-      'team1Name',
-      'team2Name',
-      'currentSet',
-      'periodTime',
-      'status',
-    ])
+    'sportType',
+    'team1Name',
+    'team2Name',
+    'currentSet',
+    'periodTime',
+    'status',
+    'team1Color',
+    'team2Color',
+    'fontFamily',
+    'boardStyle',
+    'setScores',
+    'shotClockSeconds',
+    'shotClockRunning',
+  ])
 
     return await matchService.updateSettings(Number(params.id), body)
   }
@@ -103,6 +111,22 @@ public async screenHistory({ params }: HttpContext) {
   const matchService = new MatchService()
   return await matchService.getScreenHistory(Number(params.id))
 }
+public async shotClock({ params, request }: HttpContext) {
+  const matchService = new MatchService()
+
+  const body = request.only(['seconds', 'isRunning', 'periodTime']) as {
+    seconds: number
+    isRunning?: boolean
+    periodTime?: string
+  }
+
+  return await matchService.updateShotClock(
+    Number(params.id),
+    body.seconds,
+    body.isRunning,
+    body.periodTime
+  )
+}
 
   public async resetMatch({ params }: HttpContext) {
     const matchService = new MatchService()
@@ -112,12 +136,17 @@ public async screenHistory({ params }: HttpContext) {
   const matchService = new MatchService()
 
   const body = request.only([
-    'screenId',
-    'sportType',
-    'team1Name',
-    'team2Name',
-    'currentSet',
-    'periodTime',
+  'screenId',
+  'sportType',
+  'team1Name',
+  'team2Name',
+  'currentSet',
+  'periodTime',
+  'team1Color',
+  'team2Color',
+  'fontFamily',
+  'boardStyle',
+  'shotClockSeconds',
   ]) as {
     screenId: number
     sportType?: string

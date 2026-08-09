@@ -20,9 +20,7 @@ export type ShotClockState = {
   isRunning: boolean
   defaultSeconds: number
 }
-/**
- * 
- */
+
 export default abstract class AbstractMatch {
   protected _id: number
   protected _screenId: number

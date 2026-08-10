@@ -47,4 +47,27 @@ public async store({ request, response }: HttpContext) {
     role: user.role,
   })
 }
+public async destroy({ params, auth, response }: HttpContext) {
+  const user = await User.find(params.id)
+
+  if (!user) {
+    return response.notFound({
+      message: 'Користувача не знайдено',
+    })
+  }
+
+  const currentUser = auth.user
+
+  if (currentUser?.id === user.id) {
+    return response.badRequest({
+      message: 'Не можна видалити власний обліковий запис',
+    })
+  }
+
+  await user.delete()
+
+  return response.ok({
+    message: 'Користувача видалено',
+  })
+}
 }

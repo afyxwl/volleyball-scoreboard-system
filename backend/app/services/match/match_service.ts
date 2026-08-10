@@ -311,33 +311,52 @@ export default class MatchService {
     return payload
   }
 
-  public async useTimeout(matchId: number, team: TeamNumber, periodTime?: string) {
-    const matchModel = await this.getMatchOrFail(matchId)
+public async useTimeout(
+  matchId: number,
+  team: TeamNumber,
+  delta = 1,
+  periodTime?: string
+) {
+  const matchModel = await this.getMatchOrFail(matchId)
 
-    if (periodTime) {
-      matchModel.periodTime = periodTime
-    }
-
-    if (team === 1) {
-      matchModel.timeouts1 += 1
-    } else {
-      matchModel.timeouts2 += 1
-    }
-
-    await matchModel.save()
-
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    const payload = domainMatch.serializeForScreen()
-
-    await this.logEvent(matchModel.id, 'match.timeout_taken', {
-      team,
-      periodTime: matchModel.periodTime,
-    })
-
-    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
-
-    return payload
+  if (periodTime) {
+    matchModel.periodTime = periodTime
   }
+
+  if (team === 1) {
+    matchModel.timeouts1 = Math.max(
+      0,
+      matchModel.timeouts1 + delta
+    )
+  } else {
+    matchModel.timeouts2 = Math.max(
+      0,
+      matchModel.timeouts2 + delta
+    )
+  }
+
+  await matchModel.save()
+
+  const domainMatch = MatchFactory.fromModel(matchModel)
+  const payload = domainMatch.serializeForScreen()
+
+  await this.logEvent(
+    matchModel.id,
+    'match.timeout_updated',
+    {
+      team,
+      delta,
+      periodTime: matchModel.periodTime,
+    }
+  )
+
+  await this.broadcaster.broadcastMatchUpdated(
+    matchModel.screenId,
+    payload
+  )
+
+  return payload
+}
 
   public async startPeriod(matchId: number) {
     const matchModel = await this.getMatchOrFail(matchId)

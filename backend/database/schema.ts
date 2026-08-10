@@ -48,7 +48,7 @@ export class MatchEventSchema extends BaseModel {
 }
 
 export class MatchSchema extends BaseModel {
-  static $columns = ['boardStyle', 'createdAt', 'currentSet', 'fontFamily', 'fouls1', 'fouls2', 'fouls1', 'fouls2', 'id', 'isActive', 'periodTime', 'score1', 'score2', 'screenId', 'setScoresJson', 'shotClockRunning', 'shotClockSeconds', 'sportType', 'status', 'team1Color', 'team1Name', 'team2Color', 'team2Name', 'timeouts1', 'timeouts2', 'updatedAt'] as const
+  static $columns = ['boardStyle', 'createdAt', 'currentSet', 'fontFamily', 'fouls1', 'fouls2', 'id', 'isActive', 'periodTime', 'score1', 'score2', 'screenId', 'setScoresJson', 'shotClockRunning', 'shotClockSeconds', 'sportType', 'status', 'team1Color', 'team1Name', 'team2Color', 'team2Name', 'timeouts1', 'timeouts2', 'updatedAt'] as const
   $columns = MatchSchema.$columns
   @column()
   declare boardStyle: string
@@ -58,10 +58,6 @@ export class MatchSchema extends BaseModel {
   declare currentSet: number
   @column()
   declare fontFamily: string
-  @column()
-  declare fouls1: number
-  @column()
-  declare fouls2: number
   @column()
   declare fouls1: number
   @column()

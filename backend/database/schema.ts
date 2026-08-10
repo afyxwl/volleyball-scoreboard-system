@@ -48,10 +48,12 @@ export class MatchEventSchema extends BaseModel {
 }
 
 export class MatchSchema extends BaseModel {
-  static $columns = ['boardStyle', 'createdAt', 'currentSet', 'fontFamily', 'fouls1', 'fouls2', 'id', 'isActive', 'periodTime', 'score1', 'score2', 'screenId', 'setScoresJson', 'shotClockRunning', 'shotClockSeconds', 'sportType', 'status', 'team1Color', 'team1Name', 'team2Color', 'team2Name', 'timeouts1', 'timeouts2', 'updatedAt'] as const
+  static $columns = ['boardStyle', 'clockStartedAt', 'createdAt', 'currentSet', 'fontFamily', 'fouls1', 'fouls2', 'id', 'isActive', 'periodTime', 'score1', 'score2', 'screenId', 'setScoresJson', 'shotClockRunning', 'shotClockSeconds', 'sportType', 'status', 'team1Color', 'team1Name', 'team2Color', 'team2Name', 'timeouts1', 'timeouts2', 'updatedAt'] as const
   $columns = MatchSchema.$columns
   @column()
   declare boardStyle: string
+  @column.dateTime()
+  declare clockStartedAt: DateTime | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column()

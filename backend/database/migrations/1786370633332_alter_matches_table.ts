@@ -5,15 +5,15 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
-      table
-        .timestamp('clock_started_at', { useTz: true })
-        .nullable()
+      table.dropColumn('fouls_1')
+      table.dropColumn('fouls_2')
     })
   }
 
   async down() {
     this.schema.alterTable(this.tableName, (table) => {
-      table.dropColumn('clock_started_at')
+      table.integer('fouls_1').defaultTo(0)
+      table.integer('fouls_2').defaultTo(0)
     })
   }
 }

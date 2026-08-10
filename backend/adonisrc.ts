@@ -1,4 +1,3 @@
-import { indexEntities } from '@adonisjs/core'
 import { defineConfig } from '@adonisjs/core/app'
 import { generateRegistry } from '@tuyau/core/hooks'
 
@@ -75,8 +74,7 @@ export default defineConfig({
   | Tests
   |--------------------------------------------------------------------------
   |
-  | List of test suites to organize tests by their type. Feel free to remove
-  | and add additional suites.
+  | List of test suites to organize tests by their type.
   |
   */
   tests: {
@@ -99,18 +97,11 @@ export default defineConfig({
   |--------------------------------------------------------------------------
   | Metafiles
   |--------------------------------------------------------------------------
-  |
-  | A collection of files you want to copy to the build folder when creating
-  | the production build.
-  |
   */
   metaFiles: [],
 
   hooks: {
     init: [
-      indexEntities({
-        transformers: { enabled: true },
-      }),
       generateRegistry(),
     ],
   },

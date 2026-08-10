@@ -45,7 +45,7 @@ export default class Match extends BaseModel {
 
   @column({ columnName: 'period_time' })
   declare periodTime: string | null
-  
+
   @column.dateTime({ columnName: 'clock_started_at' })
   declare clockStartedAt: DateTime | null
 
@@ -57,6 +57,7 @@ export default class Match extends BaseModel {
 
   @column()
   declare fouls2: number
+  
   @column({ columnName: 'team1_color' })
   declare team1Color: string
 

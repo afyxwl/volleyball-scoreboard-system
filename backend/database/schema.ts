@@ -63,6 +63,9 @@ export class MatchSchema extends BaseModel {
   @column()
   declare fouls2: number
   @column()
+  declare fouls1: number
+  @column()
+  declare fouls2: number
   @column({ isPrimary: true })
   declare id: number
   @column()

@@ -77,25 +77,21 @@ public async pausePeriod({ params, request }: HttpContext) {
 
     return await matchService.updateSettings(Number(params.id), body)
   }
-
- public async timeout({ params, request }: HttpContext) {
+public async timeout({ params, request }: HttpContext) {
   const matchService = new MatchService()
 
   const body = request.only([
     'team',
     'delta',
-    'periodTime',
   ]) as {
     team: 1 | 2
     delta?: number
-    periodTime?: string
   }
 
   return await matchService.useTimeout(
     Number(params.id),
     body.team,
-    body.delta ?? 1,
-    body.periodTime
+    body.delta ?? 1
   )
 }
   public async startPeriod({ params }: HttpContext) {

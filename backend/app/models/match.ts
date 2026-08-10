@@ -45,6 +45,9 @@ export default class Match extends BaseModel {
 
   @column({ columnName: 'period_time' })
   declare periodTime: string | null
+  
+  @column.dateTime({ columnName: 'clock_started_at' })
+  declare clockStartedAt: DateTime | null
 
   @column({ columnName: 'is_active' })
   declare isActive: boolean

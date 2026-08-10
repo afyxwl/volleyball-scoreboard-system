@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import Match from '#models/match'
 import MatchEvent from '#models/match_event'
 import MatchFactory from '#domain/factories/match_factory'
@@ -35,8 +36,7 @@ export default class MatchService {
 
   public async getById(matchId: number) {
     const matchModel = await this.getMatchOrFail(matchId)
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    return domainMatch.serializeForScreen()
+    return this.serializeMatch(matchModel)
   }
 
   public async getCurrentByScreenId(screenId: number) {
@@ -50,8 +50,7 @@ export default class MatchService {
       return null
     }
 
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    return domainMatch.serializeForScreen()
+   return this.serializeMatch(matchModel)
   }
 
   public async createMatch(payload: {
@@ -88,6 +87,7 @@ export default class MatchService {
       timeouts1: 0,
       timeouts2: 0,
       periodTime: payload.periodTime ?? this.defaultPeriodTime(sportType),
+      clockStartedAt: null,
       isActive: true,
 
       team1Color: this.normalizeColor(payload.team1Color, '#67e8f9'),
@@ -168,41 +168,54 @@ export default class MatchService {
     return payload
   }
 
-  public async updateScore(matchId: number, team: TeamNumber, delta: number, periodTime?: string) {
-    const matchModel = await this.getMatchOrFail(matchId)
+  public async updateScore(
+  matchId: number,
+  team: TeamNumber,
+  delta: number,
+  _periodTime?: string
+) {
+  const matchModel = await this.getMatchOrFail(matchId)
 
-    if (periodTime) {
-      matchModel.periodTime = periodTime
-    }
+  if (team === 1) {
+    matchModel.score1 = Math.max(
+      0,
+      matchModel.score1 + delta
+    )
+  } else {
+    matchModel.score2 = Math.max(
+      0,
+      matchModel.score2 + delta
+    )
+  }
 
-    if (team === 1) {
-      matchModel.score1 = Math.max(0, matchModel.score1 + delta)
-    } else {
-      matchModel.score2 = Math.max(0, matchModel.score2 + delta)
-    }
+  await matchModel.save()
 
-    await matchModel.save()
+  const payload = this.serializeMatch(matchModel)
 
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    const payload = domainMatch.serializeForScreen()
-
-    await this.logEvent(matchModel.id, 'match.score_updated', {
+  await this.logEvent(
+    matchModel.id,
+    'match.score_updated',
+    {
       team,
       delta,
-      periodTime: matchModel.periodTime,
-    })
+      periodTime: this.getCurrentPeriodTime(matchModel),
+    }
+  )
 
-    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
+  await this.broadcaster.broadcastMatchUpdated(
+    matchModel.screenId,
+    payload
+  )
 
-    return payload
-  }
+  return payload
+}
 
   public async updateFouls(matchId: number, team: TeamNumber, delta: number, periodTime?: string) {
     const matchModel = await this.getMatchOrFail(matchId)
 
-    if (periodTime) {
+    /*if (periodTime) {
       matchModel.periodTime = periodTime
-    }
+    }*/
 
     if (team === 1) {
       matchModel.fouls1 = Math.max(0, (matchModel.fouls1 ?? 0) + delta)
@@ -212,8 +225,7 @@ export default class MatchService {
 
     await matchModel.save()
 
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    const payload = domainMatch.serializeForScreen()
+    const payload = this.serializeMatch(matchModel)
 
     await this.logEvent(matchModel.id, 'match.fouls_updated', {
       team,
@@ -231,12 +243,9 @@ export default class MatchService {
     seconds: number,
     isRunning?: boolean,
     periodTime?: string
-  ) {
+  ) 
+  {
     const matchModel = await this.getMatchOrFail(matchId)
-
-    if (periodTime) {
-      matchModel.periodTime = periodTime
-    }
 
     matchModel.shotClockSeconds = this.normalizeShotClock(seconds)
 
@@ -252,8 +261,7 @@ export default class MatchService {
       periodTime: matchModel.periodTime,
     })
 
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    const payload = domainMatch.serializeForScreen()
+    const payload = this.serializeMatch(matchModel)
 
     await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
 
@@ -295,6 +303,7 @@ export default class MatchService {
     matchModel.timeouts1 = 0
     matchModel.timeouts2 = 0
     matchModel.periodTime = this.defaultPeriodTime(this.normalizeSport(matchModel.sportType))
+    matchModel.clockStartedAt = null
     matchModel.isActive = true
     matchModel.setScoresJson = { team1: [], team2: [] }
     matchModel.shotClockSeconds = 24
@@ -311,41 +320,112 @@ export default class MatchService {
     return payload
   }
 
-public async useTimeout(
-  matchId: number,
-  team: TeamNumber,
-  delta = 1,
-  periodTime?: string
-) {
-  const matchModel = await this.getMatchOrFail(matchId)
+  public async useTimeout(
+    matchId: number,
+    team: TeamNumber,
+    delta = 1
+  ) {
+    const matchModel = await this.getMatchOrFail(matchId)
 
-  if (periodTime) {
-    matchModel.periodTime = periodTime
+    if (team === 1) {
+      matchModel.timeouts1 = Math.max(
+        0,
+        matchModel.timeouts1 + delta
+      )
+    } else {
+      matchModel.timeouts2 = Math.max(
+        0,
+        matchModel.timeouts2 + delta
+      )
+    }
+
+    await matchModel.save()
+
+    const payload = this.serializeMatch(matchModel)
+
+    await this.logEvent(
+      matchModel.id,
+      'match.timeout_updated',
+      {
+        team,
+        delta,
+        periodTime: this.getCurrentPeriodTime(matchModel),
+      }
+    )
+
+    await this.broadcaster.broadcastMatchUpdated(
+      matchModel.screenId,
+      payload
+    )
+
+    return payload
   }
 
-  if (team === 1) {
-    matchModel.timeouts1 = Math.max(
-      0,
-      matchModel.timeouts1 + delta
-    )
-  } else {
-    matchModel.timeouts2 = Math.max(
-      0,
-      matchModel.timeouts2 + delta
-    )
+  public async startPeriod(matchId: number) {
+  const matchModel = await this.getMatchOrFail(matchId)
+
+  if (matchModel.status !== 'live') {
+    if (!matchModel.periodTime) {
+      matchModel.periodTime =
+        this.defaultPeriodTime(
+          this.normalizeSport(matchModel.sportType)
+        )
+    }
+
+    matchModel.clockStartedAt = DateTime.utc()
+  }
+
+  matchModel.status = 'live'
+
+  if (matchModel.sportType === 'basketball') {
+    matchModel.shotClockRunning = true
+
+    if (!matchModel.shotClockSeconds) {
+      matchModel.shotClockSeconds = 24
+    }
   }
 
   await matchModel.save()
 
-  const domainMatch = MatchFactory.fromModel(matchModel)
-  const payload = domainMatch.serializeForScreen()
+  const payload = this.serializeMatch(matchModel)
 
   await this.logEvent(
     matchModel.id,
-    'match.timeout_updated',
+    'match.period_started',
     {
-      team,
-      delta,
+      periodTime: matchModel.periodTime,
+      clockStartedAt:
+        matchModel.clockStartedAt?.toISO() ?? null,
+    }
+  )
+
+  await this.broadcaster.broadcastMatchUpdated(
+    matchModel.screenId,
+    payload
+  )
+
+  return payload
+}
+
+  public async pausePeriod(matchId: number,_periodTime?: string) {
+  const matchModel = await this.getMatchOrFail(matchId)
+
+  const currentTime =
+    this.getCurrentPeriodTime(matchModel)
+
+  matchModel.periodTime = currentTime
+  matchModel.status = 'paused'
+  matchModel.clockStartedAt = null
+  matchModel.shotClockRunning = false
+
+  await matchModel.save()
+
+  const payload = this.serializeMatch(matchModel)
+
+  await this.logEvent(
+    matchModel.id,
+    'match.period_paused',
+    {
       periodTime: matchModel.periodTime,
     }
   )
@@ -358,67 +438,15 @@ public async useTimeout(
   return payload
 }
 
-  public async startPeriod(matchId: number) {
-    const matchModel = await this.getMatchOrFail(matchId)
-
-    matchModel.status = 'live'
-
-    if (!matchModel.periodTime) {
-      matchModel.periodTime = this.defaultPeriodTime(this.normalizeSport(matchModel.sportType))
-    }
-
-    if (matchModel.sportType === 'basketball') {
-      matchModel.shotClockRunning = true
-
-      if (!matchModel.shotClockSeconds) {
-        matchModel.shotClockSeconds = 24
-      }
-    }
-
-    await matchModel.save()
-
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    const payload = domainMatch.serializeForScreen()
-
-    await this.logEvent(matchModel.id, 'match.period_started', {
-      periodTime: matchModel.periodTime,
-    })
-
-    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
-
-    return payload
-  }
-
-  public async pausePeriod(matchId: number, periodTime?: string) {
-    const matchModel = await this.getMatchOrFail(matchId)
-
-    matchModel.status = 'paused'
-    matchModel.shotClockRunning = false
-
-    if (periodTime) {
-      matchModel.periodTime = periodTime
-    }
-
-    await matchModel.save()
-
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    const payload = domainMatch.serializeForScreen()
-
-    await this.logEvent(matchModel.id, 'match.period_paused', {
-      periodTime: matchModel.periodTime,
-    })
-
-    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
-
-    return payload
-  }
-
   public async endPeriod(matchId: number, periodTime?: string, comment?: string) {
     const matchModel = await this.getMatchOrFail(matchId)
 
-    if (periodTime) {
-      matchModel.periodTime = periodTime
-    }
+    if (matchModel.status === 'live') {
+  matchModel.periodTime =
+    this.getCurrentPeriodTime(matchModel)
+}
+
+matchModel.clockStartedAt = null
 
     if (matchModel.sportType === 'volleyball') {
       return await this.endVolleyballSet(matchModel, comment)
@@ -652,6 +680,7 @@ public async useTimeout(
       matchModel.timeouts1 = 0
       matchModel.timeouts2 = 0
       matchModel.periodTime = '00:00'
+      matchModel.clockStartedAt = null
       matchModel.status = 'paused'
       matchModel.isActive = true
       matchModel.shotClockRunning = false
@@ -703,7 +732,57 @@ public async useTimeout(
       setScores: this.normalizeSetScores(matchModel.setScoresJson),
     }
   }
+private parseClock(value: string | null) {
+  const [minutes, seconds] = (value ?? '00:00')
+    .split(':')
+    .map(Number)
 
+  return (minutes || 0) * 60 + (seconds || 0)
+}
+
+private formatClock(totalSeconds: number) {
+  const safe = Math.max(0, Math.floor(totalSeconds))
+
+  const minutes = String(
+    Math.floor(safe / 60)
+  ).padStart(2, '0')
+
+  const seconds = String(
+    safe % 60
+  ).padStart(2, '0')
+
+  return `${minutes}:${seconds}`
+}
+
+private getCurrentPeriodTime(matchModel: Match) {
+  const baseSeconds = this.parseClock(matchModel.periodTime)
+
+  if (
+    matchModel.status !== 'live' ||
+    !matchModel.clockStartedAt
+  ) {
+    return this.formatClock(baseSeconds)
+  }
+
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor(
+      DateTime.utc()
+        .diff(matchModel.clockStartedAt.toUTC(), 'seconds')
+        .seconds
+    )
+  )
+
+  if (matchModel.sportType === 'basketball') {
+    return this.formatClock(
+      Math.max(0, baseSeconds - elapsedSeconds)
+    )
+  }
+
+  return this.formatClock(
+    baseSeconds + elapsedSeconds
+  )
+}
   private normalizeSport(value?: string): SportType {
     return value === 'basketball' ? 'basketball' : 'volleyball'
   }
@@ -726,7 +805,9 @@ public async useTimeout(
     return 'system'
   }
 
-  private normalizeSetScores(value: Partial<SetScores> | Match['setScoresJson'] | null): SetScores {
+  private normalizeSetScores(
+    value: Partial<SetScores> | Match['setScoresJson'] | null
+  ): SetScores {
     if (!value) {
       return { team1: [], team2: [] }
     }
@@ -750,4 +831,22 @@ public async useTimeout(
       payloadJson,
     })
   }
+  private serializeMatch(matchModel: Match) {
+  const domainMatch = MatchFactory.fromModel(matchModel)
+  const serialized = domainMatch.serializeForScreen()
+
+  return {
+    ...serialized,
+
+    serverNow: DateTime.utc().toISO(),
+
+    clock: {
+      ...serialized.clock,
+      time: matchModel.periodTime,
+      isRunning: matchModel.status === 'live',
+      startedAt:
+        matchModel.clockStartedAt?.toUTC().toISO() ?? null,
+    },
+  }
+}
 }

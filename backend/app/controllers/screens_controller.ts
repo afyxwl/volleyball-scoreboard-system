@@ -8,7 +8,7 @@ export default class ScreensController {
     return response.ok(screens)
   }
 
-  public async store({ request, response }: HttpContext) {
+  /*public async store({ request, response }: HttpContext) {
     const payload = request.only(['name', 'slug', 'ownerUserId', 'isActive']) as {
       name: string
       slug: string
@@ -29,8 +29,56 @@ export default class ScreensController {
     })
 
     return response.created(screen)
+  }*/
+public async store({ request, response }: HttpContext) {
+  const payload = request.only([
+    'name',
+    'slug',
+    'ownerUserId',
+    'isActive',
+  ]) as {
+    name?: string
+    slug?: string | null
+    ownerUserId?: number | null
+    isActive?: boolean
   }
 
+  const name = payload.name?.trim()
+
+  if (!name) {
+    return response.badRequest({
+      message: 'Назва екрана обовʼязкова',
+    })
+  }
+
+  let slug = payload.slug?.trim()
+
+  if (!slug) {
+    slug = `screen-${Date.now()}`
+  }
+
+  slug = slug
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+
+  const exists = await Screen.findBy('slug', slug)
+
+  if (exists) {
+    return response.conflict({
+      message: 'Екран з таким slug уже існує',
+    })
+  }
+
+  const screen = await Screen.create({
+    name,
+    slug,
+    ownerUserId: payload.ownerUserId ?? null,
+    isActive: payload.isActive ?? true,
+  })
+
+  return response.created(screen)
+}
   public async update({ params, request, response }: HttpContext) {
     const screen = await Screen.findOrFail(params.id)
 
@@ -68,14 +116,48 @@ export default class ScreensController {
 
     return screen
   }*/
-  public async current({ params, response }: HttpContext) {
-    const matchService = new MatchService()
-    const data = await matchService.getCurrentByScreenId(Number(params.id))
+ public async assignUser({ params, request, response }: HttpContext) {
+  const screen = await Screen.find(params.id)
 
-    if (!data) {
-      return response.notFound({ message: 'No active match for this screen' })
-    }
+  if (!screen) {
+    return response.notFound({
+      message: 'Екран не знайдено',
+    })
+  }
 
-    return data
+  const { userId } = request.only(['userId']) as {
+    userId?: number | null
+  }
+
+  screen.ownerUserId = userId ?? null
+
+  await screen.save()
+
+  return response.ok(screen)
+ }
+        public async current({ params, response }: HttpContext) {
+          const matchService = new MatchService()
+          const data = await matchService.getCurrentByScreenId(Number(params.id))
+
+          if (!data) {
+            return response.notFound({ message: 'No active match for this screen' })
+          }
+
+          return data
+        }
+        public async destroy({ params, response }: HttpContext) {
+        const screen = await Screen.find(params.id)
+
+        if (!screen) {
+          return response.notFound({
+            message: 'Екран не знайдено',
+          })
+        }
+
+        await screen.delete()
+
+        return response.ok({
+          message: 'Екран видалено',
+        })
   }
 }

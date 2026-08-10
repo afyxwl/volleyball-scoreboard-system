@@ -36,11 +36,24 @@ router
   .group(() => {
     router.get('/users', [UsersController, 'index'])
     router.post('/users', [UsersController, 'store'])
+      router.delete('/users/:id', [
+    UsersController,
+    'destroy',
+  ])
 
     router.get('/screens', [ScreensController, 'index'])
     router.post('/screens', [ScreensController, 'store'])
     router.patch('/screens/:id', [ScreensController, 'update'])
     router.get('/screens/:id/matches/history', [MatchesController, 'screenHistory'])
+    router.delete('/screens/:id', [
+      ScreensController,
+      'destroy',
+    ])
+
+    router.patch('/screens/:id/assign', [
+      ScreensController,
+      'assignUser',
+    ])
     
     router.post('/matches', [MatchesController, 'store'])
     router.get('/matches/history', [MatchesController, 'history'])

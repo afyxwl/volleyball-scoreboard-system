@@ -52,10 +52,10 @@ export default class Match extends BaseModel {
   @column({ columnName: 'is_active' })
   declare isActive: boolean
   
-  @column()
+  @column({ columnName: 'fouls1' })
   declare fouls1: number
 
-  @column()
+  @column({ columnName: 'fouls2' })
   declare fouls2: number
   
   @column({ columnName: 'team1_color' })

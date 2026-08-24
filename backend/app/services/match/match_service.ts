@@ -365,12 +365,18 @@ export default class MatchService {
   const matchModel = await this.getMatchOrFail(matchId)
 
   if (matchModel.status !== 'live') {
-    if (!matchModel.periodTime) {
-      matchModel.periodTime =
-        this.defaultPeriodTime(
-          this.normalizeSport(matchModel.sportType)
-        )
-    }
+   if (
+  !matchModel.periodTime ||
+  (
+    matchModel.sportType === 'basketball' &&
+    matchModel.periodTime === '00:00'
+  )
+) {
+  matchModel.periodTime =
+    this.defaultPeriodTime(
+      this.normalizeSport(matchModel.sportType)
+    )
+}
 
     matchModel.clockStartedAt = DateTime.utc()
   }

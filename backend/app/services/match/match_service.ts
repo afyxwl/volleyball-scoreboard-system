@@ -378,11 +378,11 @@ export default class MatchService {
   matchModel.status = 'live'
 
   if (matchModel.sportType === 'basketball') {
-    matchModel.shotClockRunning = true
-
     if (!matchModel.shotClockSeconds) {
       matchModel.shotClockSeconds = 24
     }
+
+    matchModel.shotClockRunning = false
   }
 
   await matchModel.save()
@@ -406,7 +406,6 @@ export default class MatchService {
 
   return payload
 }
-
   public async pausePeriod(matchId: number,_periodTime?: string) {
   const matchModel = await this.getMatchOrFail(matchId)
 
@@ -532,7 +531,20 @@ matchModel.clockStartedAt = null
     const matchModel = await this.getMatchOrFail(matchId)
 
     if (payload.sportType !== undefined) {
-      matchModel.sportType = this.normalizeSport(payload.sportType)
+    const previousSport = matchModel.sportType
+    const newSport = this.normalizeSport(payload.sportType)
+
+      matchModel.sportType = newSport
+
+      if (previousSport !== newSport) {
+        matchModel.periodTime =
+          this.defaultPeriodTime(newSport)
+
+        matchModel.clockStartedAt = null
+
+        matchModel.shotClockSeconds = 24
+        matchModel.shotClockRunning = false
+      }
     }
 
     if (payload.team1Name !== undefined) {
@@ -583,13 +595,13 @@ matchModel.clockStartedAt = null
       matchModel.shotClockRunning = payload.shotClockRunning
     }
 
-    if (matchModel.sportType === 'basketball' && !matchModel.periodTime) {
+    /*if (matchModel.sportType === 'basketball' && !matchModel.periodTime) {
       matchModel.periodTime = '10:00'
     }
 
     if (matchModel.sportType === 'volleyball' && !matchModel.periodTime) {
       matchModel.periodTime = '00:00'
-    }
+    }*/
 
     await matchModel.save()
 

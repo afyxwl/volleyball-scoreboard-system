@@ -238,35 +238,76 @@ export default class MatchService {
     return payload
   }
 
-  public async updateShotClock(
-    matchId: number,
-    seconds: number,
-    isRunning?: boolean,
-    periodTime?: string
-  ) 
-  {
-    const matchModel = await this.getMatchOrFail(matchId)
+public async updateShotClock(
+  matchId: number,
+  seconds: number,
+  isRunning?: boolean
+) {
+  const matchModel =
+    await this.getMatchOrFail(matchId)
 
-    matchModel.shotClockSeconds = this.normalizeShotClock(seconds)
+  if (isRunning === false) {
+    const currentSeconds =
+      this.getCurrentShotClock(matchModel)
 
-    if (isRunning !== undefined) {
-      matchModel.shotClockRunning = isRunning
-    }
+    matchModel.shotClockSeconds =
+      currentSeconds
 
-    await matchModel.save()
-
-    await this.logEvent(matchModel.id, 'match.shot_clock_updated', {
-      seconds: matchModel.shotClockSeconds,
-      isRunning: matchModel.shotClockRunning,
-      periodTime: matchModel.periodTime,
-    })
-
-    const payload = this.serializeMatch(matchModel)
-
-    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
-
-    return payload
+    matchModel.shotClockRunning = false
+    matchModel.shotClockStartedAt = null
   }
+
+
+  else if (isRunning === true) {
+    matchModel.shotClockSeconds =
+      this.normalizeShotClock(seconds)
+
+    matchModel.shotClockRunning =
+      matchModel.shotClockSeconds > 0
+
+    matchModel.shotClockStartedAt =
+      matchModel.shotClockRunning
+        ? DateTime.utc().startOf('second')
+        : null
+  }
+
+
+  else {
+    matchModel.shotClockSeconds =
+      this.normalizeShotClock(seconds)
+
+    matchModel.shotClockRunning = false
+    matchModel.shotClockStartedAt = null
+  }
+
+  await matchModel.save()
+
+  const payload =
+    this.serializeMatch(matchModel)
+
+  await this.logEvent(
+    matchModel.id,
+    'match.shot_clock_updated',
+    {
+      seconds:
+        matchModel.shotClockSeconds,
+
+      isRunning:
+        matchModel.shotClockRunning,
+
+      startedAt:
+        matchModel.shotClockStartedAt
+          ?.toISO() ?? null,
+    }
+  )
+
+  await this.broadcaster.broadcastMatchUpdated(
+    matchModel.screenId,
+    payload
+  )
+
+  return payload
+}
 
   public async takeTimeout(matchId: number, team: TeamNumber) {
     const matchModel = await this.getMatchOrFail(matchId)
@@ -378,7 +419,8 @@ export default class MatchService {
     )
 }
 
-    matchModel.clockStartedAt = DateTime.utc()
+    matchModel.clockStartedAt =
+    DateTime.utc().startOf('second')
   }
 
   matchModel.status = 'live'
@@ -801,6 +843,35 @@ private getCurrentPeriodTime(matchModel: Match) {
     baseSeconds + elapsedSeconds
   )
 }
+
+private getCurrentShotClock(matchModel: Match) {
+  const baseSeconds =
+    this.normalizeShotClock(matchModel.shotClockSeconds ?? 24)
+
+  if (
+    !matchModel.shotClockRunning ||
+    !matchModel.shotClockStartedAt
+  ) {
+    return baseSeconds
+  }
+
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor(
+      DateTime.utc()
+        .diff(
+          matchModel.shotClockStartedAt.toUTC(),
+          'seconds'
+        )
+        .seconds
+    )
+  )
+
+  return Math.max(
+    0,
+    baseSeconds - elapsedSeconds
+  )
+}
   private normalizeSport(value?: string): SportType {
     return value === 'basketball' ? 'basketball' : 'volleyball'
   }
@@ -849,9 +920,12 @@ private getCurrentPeriodTime(matchModel: Match) {
       payloadJson,
     })
   }
-  private serializeMatch(matchModel: Match) {
+private serializeMatch(matchModel: Match) {
   const domainMatch = MatchFactory.fromModel(matchModel)
   const serialized = domainMatch.serializeForScreen()
+
+  const currentShotClock =
+    this.getCurrentShotClock(matchModel)
 
   return {
     ...serialized,
@@ -864,6 +938,21 @@ private getCurrentPeriodTime(matchModel: Match) {
       isRunning: matchModel.status === 'live',
       startedAt:
         matchModel.clockStartedAt?.toUTC().toISO() ?? null,
+    },
+
+    shotClock: {
+      ...serialized.shotClock,
+
+      seconds: matchModel.shotClockSeconds,
+
+      isRunning:
+        matchModel.shotClockRunning &&
+        currentShotClock > 0,
+
+      startedAt:
+        matchModel.shotClockStartedAt
+          ?.toUTC()
+          .toISO() ?? null,
     },
   }
 }

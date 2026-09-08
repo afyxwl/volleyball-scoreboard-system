@@ -115,18 +115,16 @@ public async screenHistory({ params }: HttpContext) {
 public async shotClock({ params, request }: HttpContext) {
   const matchService = new MatchService()
 
-  const body = request.only(['seconds', 'isRunning', 'periodTime']) as {
+  const body = request.only(['seconds', 'isRunning']) as {
     seconds: number
     isRunning?: boolean
-    periodTime?: string
   }
 
-  return await matchService.updateShotClock(
-    Number(params.id),
-    body.seconds,
-    body.isRunning,
-    body.periodTime
-  )
+return await matchService.updateShotClock(
+  Number(params.id),
+  body.seconds,
+  body.isRunning
+)
 }
 
   public async resetMatch({ params }: HttpContext) {

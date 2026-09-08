@@ -79,6 +79,9 @@ export default class Match extends BaseModel {
   @column({ columnName: 'shot_clock_running' })
   declare shotClockRunning: boolean
 
+  @column.dateTime({ columnName: 'shot_clock_started_at' })
+  declare shotClockStartedAt: DateTime | null
+
   @belongsTo(() => Screen)
   declare screen: BelongsTo<typeof Screen>
 

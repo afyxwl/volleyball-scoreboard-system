@@ -14,3 +14,5 @@ backend/build
 
 frontend-admin/.vite
 frontend-tv/.vite
+.DS_Store
+**/.DS_Store

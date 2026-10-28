@@ -360,51 +360,87 @@ public async updateShotClock(
 
     return payload
   }
+public async useTimeout(
+  matchId: number,
+  team: TeamNumber,
+  delta = 1
+) {
+  const matchModel = await this.getMatchOrFail(matchId)
 
-  public async useTimeout(
-    matchId: number,
-    team: TeamNumber,
-    delta = 1
-  ) {
-    const matchModel = await this.getMatchOrFail(matchId)
-
-    if (team === 1) {
-      matchModel.timeouts1 = Math.max(
-        0,
-        matchModel.timeouts1 + delta
-      )
-    } else {
-      matchModel.timeouts2 = Math.max(
-        0,
-        matchModel.timeouts2 + delta
-      )
+  if (matchModel.sportType === 'volleyball' && delta > 0) {
+    if (
+      matchModel.timeoutEndAt &&
+      matchModel.timeoutEndAt.toMillis() > DateTime.utc().toMillis()
+    ) {
+      return this.serializeMatch(matchModel)
     }
-
-    await matchModel.save()
-
-    const payload = this.serializeMatch(matchModel)
-
-    await this.logEvent(
-      matchModel.id,
-      'match.timeout_updated',
-      {
-        team,
-        delta,
-        periodTime: this.getCurrentPeriodTime(matchModel),
-      }
-    )
-
-    await this.broadcaster.broadcastMatchUpdated(
-      matchModel.screenId,
-      payload
-    )
-
-    return payload
   }
+
+  const currentTimeouts =
+    team === 1 ? matchModel.timeouts1 : matchModel.timeouts2
+
+  const updatedTimeouts = Math.max(
+    0,
+    Math.min(
+      matchModel.sportType === 'volleyball' ? 2 : 99,
+      currentTimeouts + delta
+    )
+  )
+
+  if (updatedTimeouts === currentTimeouts) {
+    return this.serializeMatch(matchModel)
+  }
+
+  if (team === 1) {
+    matchModel.timeouts1 = updatedTimeouts
+  } else {
+    matchModel.timeouts2 = updatedTimeouts
+  }
+
+  if (matchModel.sportType === 'volleyball' && delta > 0) {
+    matchModel.periodTime = this.getCurrentPeriodTime(matchModel)
+
+    matchModel.status = 'paused'
+    matchModel.clockStartedAt = null
+
+    matchModel.timeoutEndAt = DateTime.utc().plus({
+      seconds: 30,
+    })
+  }
+
+  await matchModel.save()
+
+  const payload = this.serializeMatch(matchModel)
+
+  await this.logEvent(
+    matchModel.id,
+    'match.timeout_updated',
+    {
+      team,
+      delta,
+      periodTime: matchModel.periodTime,
+      timeoutEndAt: matchModel.timeoutEndAt?.toISO() ?? null,
+    }
+  )
+
+  await this.broadcaster.broadcastMatchUpdated(
+    matchModel.screenId,
+    payload
+  )
+
+  return payload
+}
 
   public async startPeriod(matchId: number) {
   const matchModel = await this.getMatchOrFail(matchId)
+  if (
+    matchModel.timeoutEndAt &&
+    matchModel.timeoutEndAt.toMillis() > DateTime.utc().toMillis()
+  ) {
+    return this.serializeMatch(matchModel)
+  }
 
+  matchModel.timeoutEndAt = null
   if (matchModel.status !== 'live') {
    if (
   !matchModel.periodTime ||
@@ -931,7 +967,13 @@ private serializeMatch(matchModel: Match) {
     ...serialized,
 
     serverNow: DateTime.utc().toISO(),
-
+    timeout: {
+      isActive: Boolean(
+        matchModel.timeoutEndAt &&
+        matchModel.timeoutEndAt.toMillis() > DateTime.utc().toMillis()
+      ),
+      endsAt: matchModel.timeoutEndAt?.toUTC().toISO() ?? null,
+    },
     clock: {
       ...serialized.clock,
       time: matchModel.periodTime,

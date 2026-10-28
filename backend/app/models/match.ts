@@ -49,6 +49,9 @@ export default class Match extends BaseModel {
   @column.dateTime({ columnName: 'clock_started_at' })
   declare clockStartedAt: DateTime | null
 
+  @column.dateTime({ columnName: 'timeout_end_at' })
+  declare timeoutEndAt: DateTime | null
+
   @column({ columnName: 'is_active' })
   declare isActive: boolean
   

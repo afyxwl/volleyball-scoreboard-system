@@ -367,17 +367,22 @@ public async useTimeout(
 ) {
   const matchModel = await this.getMatchOrFail(matchId)
 
-  if (matchModel.sportType === 'volleyball' && delta > 0) {
-    if (
-      matchModel.timeoutEndAt &&
-      matchModel.timeoutEndAt.toMillis() > DateTime.utc().toMillis()
-    ) {
-      return this.serializeMatch(matchModel)
-    }
+  const now = DateTime.utc()
+
+  // Забороняємо запускати новий таймаут,
+  // якщо попередній ще триває.
+  if (
+    delta > 0 &&
+    matchModel.timeoutEndAt &&
+    matchModel.timeoutEndAt.toMillis() > now.toMillis()
+  ) {
+    return this.serializeMatch(matchModel)
   }
 
   const currentTimeouts =
-    team === 1 ? matchModel.timeouts1 : matchModel.timeouts2
+    team === 1
+      ? matchModel.timeouts1
+      : matchModel.timeouts2
 
   const updatedTimeouts = Math.max(
     0,
@@ -397,14 +402,33 @@ public async useTimeout(
     matchModel.timeouts2 = updatedTimeouts
   }
 
-  if (matchModel.sportType === 'volleyball' && delta > 0) {
-    matchModel.periodTime = this.getCurrentPeriodTime(matchModel)
+  if (delta > 0) {
+    // Зберігаємо час матчу перед таймаутом.
+    matchModel.periodTime =
+      this.getCurrentPeriodTime(matchModel)
 
+    // Зупиняємо основний таймер.
     matchModel.status = 'paused'
     matchModel.clockStartedAt = null
 
-    matchModel.timeoutEndAt = DateTime.utc().plus({
-      seconds: 30,
+    // Зупиняємо таймер атаки в баскетболі.
+    if (matchModel.sportType === 'basketball') {
+      matchModel.shotClockSeconds =
+        this.getCurrentShotClock(matchModel)
+
+      matchModel.shotClockRunning = false
+      matchModel.shotClockStartedAt = null
+    }
+
+    // Волейбол — 30 секунд.
+    // Баскетбол — 60 секунд.
+    const duration =
+      matchModel.sportType === 'basketball'
+        ? 60
+        : 30
+
+    matchModel.timeoutEndAt = now.plus({
+      seconds: duration,
     })
   }
 
@@ -419,7 +443,8 @@ public async useTimeout(
       team,
       delta,
       periodTime: matchModel.periodTime,
-      timeoutEndAt: matchModel.timeoutEndAt?.toISO() ?? null,
+      timeoutEndAt:
+        matchModel.timeoutEndAt?.toISO() ?? null,
     }
   )
 
@@ -584,6 +609,72 @@ matchModel.clockStartedAt = null
 
     return payload
   }
+
+  public async finishMatch(
+  matchId: number,
+  comment?: string
+) {
+
+  const matchModel = await this.getMatchOrFail(matchId)
+
+  if (matchModel.status === 'finished') {
+    return this.serializeMatch(matchModel)
+  }
+
+  if (matchModel.status === 'live') {
+    matchModel.periodTime =
+      this.getCurrentPeriodTime(matchModel)
+  }
+
+  if (matchModel.sportType === 'volleyball') {
+    const scores =
+      this.normalizeSetScores(matchModel.setScoresJson)
+
+    const index = Math.max(
+      0,
+      matchModel.currentSet - 1
+    )
+
+    if (
+      index < 5 &&
+      (
+        matchModel.score1 > 0 ||
+        matchModel.score2 > 0
+      ) &&
+      scores.team1[index] === undefined &&
+      scores.team2[index] === undefined
+    ) {
+      scores.team1[index] = matchModel.score1
+      scores.team2[index] = matchModel.score2
+
+      matchModel.setScoresJson = scores
+    }
+  }
+
+  matchModel.status = 'finished'
+  matchModel.isActive = true
+  matchModel.clockStartedAt = null
+  matchModel.shotClockRunning = false
+  matchModel.shotClockStartedAt = null
+  matchModel.timeoutEndAt = null
+
+  await matchModel.save()
+
+  await this.logEvent(
+    matchModel.id,
+    'match.finished',
+    this.finishPayload(matchModel, comment)
+  )
+
+  const payload = this.serializeMatch(matchModel)
+
+  await this.broadcaster.broadcastMatchUpdated(
+    matchModel.screenId,
+    payload
+  )
+
+  return payload
+}
 
   public async getScreenHistory(screenId: number) {
     const matches = await Match.query()

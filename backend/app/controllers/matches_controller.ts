@@ -158,4 +158,16 @@ return await matchService.updateShotClock(
   const data = await matchService.createMatch(body)
   return response.created(data)
 }
+public async finishMatch({ params, request }: HttpContext) {
+  const matchService = new MatchService()
+
+  const body = request.only(['comment']) as {
+    comment?: string
+  }
+
+  return await matchService.finishMatch(
+    Number(params.id),
+    body.comment
+  )
+}
 }

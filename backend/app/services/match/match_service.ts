@@ -330,36 +330,30 @@ public async updateShotClock(
       .orderBy('id', 'asc')
   }
 
-  public async resetMatch(matchId: number) {
-    const matchModel = await this.getMatchOrFail(matchId)
+public async resetMatch(matchId: number) {
+  const matchModel = await this.getMatchOrFail(matchId)
 
-    matchModel.status = 'draft'
-    matchModel.currentSet = 1
-    matchModel.team1Name = 'TEAM A'
-    matchModel.team2Name = 'TEAM B'
-    matchModel.score1 = 0
-    matchModel.score2 = 0
-    matchModel.fouls1 = 0
-    matchModel.fouls2 = 0
-    matchModel.timeouts1 = 0
-    matchModel.timeouts2 = 0
-    matchModel.periodTime = this.defaultPeriodTime(this.normalizeSport(matchModel.sportType))
-    matchModel.clockStartedAt = null
-    matchModel.isActive = true
-    matchModel.setScoresJson = { team1: [], team2: [] }
-    matchModel.shotClockSeconds = 24
-    matchModel.shotClockRunning = false
-
-    await matchModel.save()
-
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    const payload = domainMatch.serializeForScreen()
-
-    await this.logEvent(matchModel.id, 'match_reset', payload)
-    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
-
-    return payload
+  // Зберігаємо поточний матч як завершений.
+  if (matchModel.status !== 'finished') {
+    await this.finishMatch(matchModel.id, 'Матч збережено під час скидання')
   }
+
+  // Створюємо НОВИЙ матч, не змінюючи старий запис.
+  const newMatch = await this.createMatch({
+    screenId: matchModel.screenId,
+    sportType: matchModel.sportType,
+    team1Name: 'TEAM A',
+    team2Name: 'TEAM B',
+    team1Color: matchModel.team1Color,
+    team2Color: matchModel.team2Color,
+    fontFamily: matchModel.fontFamily,
+    boardStyle: matchModel.boardStyle,
+    shotClockSeconds: 24,
+  })
+
+  return newMatch
+}
+
 public async useTimeout(
   matchId: number,
   team: TeamNumber,
@@ -546,35 +540,51 @@ public async useTimeout(
   return payload
 }
 
-  public async endPeriod(matchId: number, periodTime?: string, comment?: string) {
-    const matchModel = await this.getMatchOrFail(matchId)
+public async endPeriod(
+  matchId: number,
+  periodTime?: string,
+  comment?: string
+) {
+  const matchModel = await this.getMatchOrFail(matchId)
 
-    if (matchModel.status === 'live') {
-  matchModel.periodTime =
-    this.getCurrentPeriodTime(matchModel)
-}
-
-matchModel.clockStartedAt = null
-
-    if (matchModel.sportType === 'volleyball') {
-      return await this.endVolleyballSet(matchModel, comment)
-    }
-
-    matchModel.status = 'finished'
-    matchModel.isActive = true
-    matchModel.shotClockRunning = false
-
-    await matchModel.save()
-
-    await this.logEvent(matchModel.id, 'match.finished', this.finishPayload(matchModel, comment))
-
-    const domainMatch = MatchFactory.fromModel(matchModel)
-    const payload = domainMatch.serializeForScreen()
-
-    await this.broadcaster.broadcastMatchUpdated(matchModel.screenId, payload)
-
-    return payload
+  if (matchModel.status === 'finished') {
+    return this.serializeMatch(matchModel)
   }
+
+  if (matchModel.status === 'live') {
+    matchModel.periodTime = this.getCurrentPeriodTime(matchModel)
+  }
+
+  matchModel.clockStartedAt = null
+  matchModel.shotClockRunning = false
+  matchModel.shotClockStartedAt = null
+  matchModel.timeoutEndAt = null
+
+  if (matchModel.sportType === 'volleyball') {
+    return await this.endVolleyballSet(matchModel, comment)
+  }
+
+  // Завершуємо лише баскетбольний період.
+  matchModel.status = 'paused'
+  matchModel.isActive = true
+
+  await matchModel.save()
+
+  await this.logEvent(matchModel.id, 'period.finished', {
+    period: matchModel.currentSet,
+    periodTime: matchModel.periodTime,
+    comment,
+  })
+
+  const payload = this.serializeMatch(matchModel)
+
+  await this.broadcaster.broadcastMatchUpdated(
+    matchModel.screenId,
+    payload
+  )
+
+  return payload
+}
 
   public async renameTeams(matchId: number, team1Name: string, team2Name: string) {
     const matchModel = await this.getMatchOrFail(matchId)
